@@ -121,8 +121,8 @@ function init(){
  const f0=bfs(SX,SY);do{S.ax=R(W);S.ay=R(H)}while(f0[S.ay][S.ax]<9||(S.ax==EX&&S.ay==EY));
  const used=new Set([SX+','+SY,EX+','+EY,S.ax+','+S.ay]);
  const pick=()=>{let x,y;do{x=R(W);y=R(H)}while(used.has(x+','+y));used.add(x+','+y);return[x,y]};
- for(let i=0;i<8;i++){const[x,y]=pick();S.items[x+','+y]='scrap'}
- for(let i=0;i<5;i++){const[x,y]=pick();S.items[x+','+y]='o2'}
+ for(let i=0;i<6;i++){const[x,y]=pick();S.items[x+','+y]='scrap'}
+ for(let i=0;i<3;i++){const[x,y]=pick();S.items[x+','+y]='o2'}
  let dd;do{dd=pick()}while(f0[dd[1]][dd[0]]<8||D(dd[0],dd[1],EX,EY)<4);S.dx=dd[0];S.dy=dd[1];S.items[dd[0]+','+dd[1]]='data';
  let cd;do{cd=pick()}while(f0[cd[1]][cd[0]]<10);S.items[cd[0]+','+cd[1]]='card';
  for(let i=0;i<4;i++)S.vents.push(pick());
