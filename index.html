@@ -37,6 +37,14 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 #o2 i{display:block;height:100%;width:100%;background:var(--ph);transition:width .1s linear}
 #o2.mid i{background:var(--amb)}#o2.low i{background:var(--red);animation:fl2 .5s steps(2) infinite}
 #o2.low,#o2.low b{color:var(--red)}@keyframes fl2{50%{opacity:.15}}
+#menu{position:fixed;inset:0;z-index:70;background:radial-gradient(ellipse at 50% 30%,#0b2a17,#000 70%);display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:14px;padding:max(20px,env(safe-area-inset-top,0px)) 20px max(20px,env(safe-area-inset-bottom,0px));overflow-y:auto;touch-action:pan-y;text-align:center}
+#menu .logo{font-size:60px;filter:drop-shadow(0 0 14px var(--ph))}
+#menu .mt{font-size:34px;letter-spacing:.18em;line-height:1.15;margin:0}
+#menu .tag{margin:0;font-size:14px;color:#4c8a62;letter-spacing:.08em}
+#play{font:inherit;font-size:22px;letter-spacing:.3em;padding:14px 44px;margin:6px 0;background:#0b2a17;color:var(--ph);border:2px solid var(--ph);border-radius:10px;box-shadow:0 0 18px #4dff8855}
+#play:active{background:var(--ph);color:#000}
+#how{max-width:340px;font-size:16px;line-height:1.4;color:#8fd9a8;text-align:left}
+#how p{margin:0 0 10px;text-align:center;color:var(--ph)}#how ul{margin:0;padding-left:20px}#how li{margin-bottom:5px}
 #mute{position:fixed;top:8px;right:10px;z-index:30;background:none;border:1px solid var(--dim);color:var(--ph);border-radius:6px;font-size:16px;padding:4px 8px}
 #ghost{position:fixed;font-size:34px;pointer-events:none;z-index:50;transform:translate(-50%,-50%);display:none}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:40;display:none}
@@ -53,9 +61,10 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 <div id="vp"><div id="grid"></div><svg id="arrow" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="#5cf" stroke="#bff" stroke-width="1.5" stroke-linejoin="round"/></svg><svg id="arrow2" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="#ffd400" stroke="#fff6b0" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
 <div id="hud"><div>BREATH <span class="pips" id="stam"></span></div><div id="scrap"></div><div id="slot" class="empty">📡<b id="nc">0</b></div></div>
 <div id="key"><span><i style="background:#7fe"></i>Wall</span><span><i style="background:#ffb02e"></i>Closed door</span><span><i style="background:#2f7a4a"></i>Open door</span><span><b style="color:#5cf">➤</b>Elevator</span><span><b style="color:#fd0">➤</b>Data</span></div>
-<div id="help">Tap an adjacent room to move · Hold your own tile to hold breath · Drag the 📡 noisemaker onto a tile to lure it · Numbers = steps from the alien (around walls) · Amber = door: tap to pry open, but the Alien can open them too · 🫁 = oxygen canister (+20s)</div>
 </div>
 <button id="mute" aria-label="Toggle music">🔊</button>
+<div id="menu"><div class="logo">👾</div><h1 class="mt">PROXIMITY<br>ALERT</h1><p class="tag">One motion tracker. One alien. No light.</p><button id="play">PLAY</button>
+<div id="how"><p>Secure the classified data 💽 and the access card 🪪, then reach the elevator 🛗 before your oxygen runs out.</p><ul><li>Tap an adjacent room to move</li><li>Hold your own tile to hold breath</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien</li><li>Numbers = steps from the alien (around walls)</li><li>Amber = door: tap to pry open, but the Alien can open them too</li><li>🫁 = oxygen canister (+20s)</li></ul></div></div>
 <div id="ghost">📡</div><canvas id="fx"></canvas>
 <div id="over"><h2 id="ot"></h2><div id="os"></div><button id="again">RETRY</button></div>
 <script>
@@ -67,7 +76,7 @@ grid.style.gridTemplateColumns='repeat('+W+',var(--ts))';
 function layout(){
  const maxW=Math.min(innerWidth-24,360);
  TS=Math.max(44,Math.floor((maxW-2-2*PAD-(VC-1)*GAP)/VC));
- const avail=innerHeight-292-2*PAD;
+ const avail=innerHeight-250-2*PAD;
  VR=Math.min(7,Math.max(5,Math.floor((avail+GAP)/(TS+GAP))));
  grid.style.setProperty('--ts',TS+'px');
  vp.style.width=(VC*TS+(VC-1)*GAP+2*PAD+2)+'px';
@@ -231,7 +240,8 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(.25,(now-lastT)/1000);l
  o2ui();
  if(S.o2<=O2LOW){if(!muted&&breathe.paused)breathe.play().catch(()=>{})}else breathe.pause()},100);
 function near(){const adj=D(S.ax,S.ay,S.px,S.py)==1&&S.e[ek(S.ax,S.ay,S.px,S.py)]!='w';if(adj&&!S.near&&!muted){try{caught.currentTime=0;caught.play().catch(()=>{})}catch(e){}}S.near=adj}
-function bgmPlay(){if(!muted&&bgm.paused&&!(S&&S.over)){try{bgm.play().catch(()=>{})}catch(e){}}}
+let inMenu=true;
+function bgmPlay(){if(!inMenu&&!muted&&bgm.paused&&!(S&&S.over)){try{bgm.play().catch(()=>{})}catch(e){}}}
 $('mute').onclick=()=>{muted=!muted;$('mute').textContent=muted?'🔇':'🔊';if(muted){bgm.pause();caught.pause();deathSfx.pause();scrapSfx.pause();breathe.pause()}else{ensureAudio()}};
 /* audio + haptics */
 function ensureAudio(){bgmPlay();if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(ac&&ac.state=='suspended')ac.resume()}
@@ -274,5 +284,6 @@ slot.addEventListener('pointerup',e=>{
 });
 $('again').onclick=()=>{deathSfx.pause();init();ensureAudio()};
 ['pointerdown','touchstart','touchend','click','keydown'].forEach(ev=>addEventListener(ev,ensureAudio,{capture:true,passive:true}));
+$('play').onclick=()=>{inMenu=false;$('menu').style.display='none';init();ensureAudio()};
 layout();init();
 </script></body></html>
