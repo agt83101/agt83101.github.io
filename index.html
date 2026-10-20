@@ -80,7 +80,7 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 <script>
 const $=id=>document.getElementById(id);
 const R=n=>Math.floor(Math.random()*n),D=(a,b,c,d)=>Math.abs(a-c)+Math.abs(b-d);
-const GAP=4,PAD=6,VC=5,O2CAN=20,O2LOW=10;
+const GAP=4,PAD=6,VC=5,O2CAN=60,O2LOW=10;
 let W=9,H=13,SX=4,SY=12,EX=4,EY=0,EXI='🛗',LVL=0,S,ac,bt,T=[],PROG=1;
 try{PROG=Math.max(1,+localStorage.getItem('pa_prog')||1)}catch(e){}
 const ICON={scrap:'⚙️',o2:'🫁',card:'🪪',cell:'🔋',axe:'🪓',flame:'🧨',data:''};
@@ -151,7 +151,7 @@ function startLevel(i){
 }
 function init(){
  const c=LV[LVL],rx=c.m=='reactor';
- S={px:SX,py:SY,ax:0,ay:0,scrap:0,noise:0,stam:3,moves:0,over:false,nz:null,held:false,items:{},vents:[],webs:{},fire:{},eggs:[],fuses:[],fr:null,card:false,data:false,cells:0,axe:false,flame:rx,fch:rx?3:0,frest:0,armed:false,arm:0,busy:false,loud:false,fs:0,o2max:rx?90:120,o2:rx?90:120,started:false,suff:false,dark:false,flt:8,e:gen(),mem:Array.from({length:H},()=>Array(W).fill(null))};
+ S={px:SX,py:SY,ax:0,ay:0,scrap:0,noise:0,stam:3,moves:0,over:false,nz:null,held:false,items:{},vents:[],webs:{},fire:{},eggs:[],fuses:[],fr:null,card:false,data:false,cells:0,axe:false,flame:rx,fch:rx?3:0,frest:0,armed:false,arm:0,busy:false,loud:false,fs:0,o2max:rx?90:300,o2:rx?90:300,started:false,suff:false,dark:false,flt:8,e:gen(),mem:Array.from({length:H},()=>Array(W).fill(null))};
  const f0=bfs(SX,SY);
  do{S.ax=R(W);S.ay=R(H)}while(f0[S.ay][S.ax]<9||(S.ax==EX&&S.ay==EY));
  const used=new Set([SX+','+SY,EX+','+EY,S.ax+','+S.ay]);
