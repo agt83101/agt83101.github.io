@@ -47,6 +47,7 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 .lv small{display:block;font-size:12px;color:#8fd9a8;margin-top:2px}
 .lv:disabled{opacity:.35;border-color:var(--dim);color:#4c8a62;background:#050c07}
 .sec{font:inherit;font-size:14px;padding:10px 22px;background:none;color:var(--ph);border:1px solid var(--dim);border-radius:8px}
+#tip{font-size:12px;color:var(--amb);text-align:center;max-width:360px;flex:none;line-height:1.3}
 #o2.idle i{background:var(--dim)}#o2t{min-width:56px;text-align:right}
 #vp.dark{animation:fk .35s infinite}@keyframes fk{50%{filter:brightness(.4)}}
 #vp.alarm{box-shadow:0 0 26px #f33 inset;animation:al .8s infinite alternate}@keyframes al{to{box-shadow:0 0 4px #f33 inset}}
@@ -66,36 +67,37 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 <div id="app">
 <h1 id="ttl">PROXIMITY ALERT</h1>
 <div id="msg"></div>
-<div id="o2"><span id="o2l">O₂</span><div class="bar"><i id="o2f"></i></div><b id="o2t">120s</b></div>
+<div id="tip"></div>
+<div id="o2"><span id="o2l">O₂</span><div class="bar"><i id="o2f"></i></div><b id="o2t">60s</b></div>
 <div id="vp"><div id="grid"></div><svg id="arrow" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="#5cf" stroke="#bff" stroke-width="1.5" stroke-linejoin="round"/></svg><svg id="arrow2" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="currentColor" stroke="#ffffffaa" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
 <div id="hud"><div>BREATH <span class="pips" id="stam"></span></div><div id="scrap"></div><div style="display:flex;gap:8px"><div id="slot" class="empty">📡<b id="nc">0</b></div><div id="slot2" class="empty" style="display:none">🧨<b id="fc">0</b></div></div></div>
 <div id="key"><span><i style="background:#7fe"></i>Wall</span><span><i style="background:#ffb02e"></i>Closed door</span><span><i style="background:#2f7a4a"></i>Open door</span><span><b style="color:#5cf">➤</b>Exit</span><span><b id="kb" style="color:#fd0">➤</b>Objective</span></div>
 </div>
 <button id="mute" aria-label="Toggle music">🔊</button>
 <div id="menu"><div class="logo">👾</div><h1 class="mt">PROXIMITY<br>ALERT</h1><p class="tag">One motion tracker. One alien. No light.</p><button id="play">PLAY</button>
-<div id="how"><p>Complete each mission objective, then escape the derelict before your oxygen runs out.</p><ul><li>Tap an adjacent room to move</li><li>Hold your own tile to hold breath</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien</li><li>Numbers = steps from the alien (around walls)</li><li>Amber = door: tap to pry open, but the Alien can open them too</li><li>🫁 = oxygen canister (+20s)</li><li>🕸️ web = you lose a turn</li><li>🧨 Flamethrower: drag it onto a tile within 2 steps</li></ul></div></div>
+<div id="how"><p>Complete each mission objective, then escape the derelict.</p><ul><li>Tap an adjacent room to move</li><li>Hold your own tile to hold breath</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien</li><li>Numbers = steps from the alien (around walls)</li><li><i style="display:inline-block;width:24px;height:5px;background:#ffb02e;vertical-align:middle;margin-right:4px"></i> = door: tap to pry open, but the Alien can open them too</li></ul></div></div>
 <div id="lvls"><h1 class="mt" style="font-size:26px">SELECT MISSION</h1><div id="lvlist"></div><button id="back" class="sec">BACK</button></div>
 <div id="ghost">📡</div><canvas id="fx"></canvas>
 <div id="over"><h2 id="ot"></h2><div id="os"></div><button id="again">RETRY</button><button id="tolv">LEVEL SELECT</button></div>
 <script>
 const $=id=>document.getElementById(id);
 const R=n=>Math.floor(Math.random()*n),D=(a,b,c,d)=>Math.abs(a-c)+Math.abs(b-d);
-const GAP=4,PAD=6,VC=5,O2CAN=60,O2LOW=10;
+const GAP=4,PAD=6,VC=5,O2CAN=20,O2LOW=10,O2MAX=90;
 let W=9,H=13,SX=4,SY=12,EX=4,EY=0,EXI='🛗',LVL=0,S,ac,bt,T=[],PROG=1;
 try{PROG=Math.max(1,+localStorage.getItem('pa_prog')||1)}catch(e){}
 const ICON={scrap:'⚙️',o2:'🫁',card:'🪪',cell:'🔋',axe:'🪓',flame:'🧨',data:''};
 const LV=[
- {n:'Black Box',d:'EASY',m:'disc',W:9,H:13,o2:3,sc:6,v:4,dr:12,wb:0,hunt:8,exit:'🛗',brief:'Find the data disc 💽 and the access card 🪪, then reach the elevator.',win:'The elevator doors close with the data secured.'},
- {n:'Dead Power',d:'EASY-MEDIUM',m:'power',W:11,H:15,o2:4,sc:6,v:4,dr:14,wb:0,hunt:10,exit:'🛗',fl:1,brief:'The elevator is dead. Find 3 power cells 🔋 and install each at a fuse box ⚡.',win:'Power restored. The elevator hums to life.'},
- {n:'A Friend in Need',d:'MEDIUM',m:'friend',W:11,H:17,o2:5,sc:6,v:4,dr:14,wb:8,hunt:10,exit:'🛗',brief:'Find an axe 🪓, free your friend 👩‍🔧 and get them to the elevator alive.',win:'You and your friend made it out alive.'},
- {n:'Sabotage!',d:'MEDIUM-HARD',m:'eggs',W:13,H:17,o2:6,sc:4,v:6,dr:16,wb:8,hunt:11,exit:'🛗',brief:'Find the flamethrower 🧨, then drag it onto a nearby tile to burn all 3 alien eggs 🥚.',win:'The nest burns. The elevator is yours.'},
- {n:'Scorched Earth',d:'HARD',m:'reactor',W:13,H:19,o2:0,sc:4,v:8,dr:18,wb:8,hunt:12,exit:'🚀',slow:1,brief:'Reach the reactor ☢️ and hold your tile to arm it. Then reach the ship 🚀 within 90 seconds.',win:'The ship lifts off as the derelict goes up in flames.'}
+ {n:'Black Box',d:'EASY',m:'disc',W:9,H:13,o2:0,sc:6,v:4,dr:12,wb:0,hunt:8,exit:'🛗',brief:'Find the data disc 💽 and the access card 🪪, then reach the elevator.',win:'The elevator doors close with the data secured.'},
+ {n:'Dead Power',d:'EASY-MEDIUM',m:'power',W:11,H:15,o2:0,sc:6,v:4,dr:14,wb:0,hunt:10,exit:'🛗',fl:1,brief:'The elevator is dead. Find 3 power cells 🔋 and install each at a fuse box ⚡.',win:'Power restored. The elevator hums to life.'},
+ {n:'A Friend in Need',d:'MEDIUM',m:'friend',tip:'🕸️ Webs: stepping into one costs you a turn.',W:11,H:17,o2:0,sc:6,v:4,dr:14,wb:8,hunt:10,exit:'🛗',brief:'Find an axe 🪓, free your friend 👩‍🔧 and get them to the elevator alive.',win:'You and your friend made it out alive.'},
+ {n:'Sabotage!',d:'MEDIUM-HARD',m:'eggs',tip:'🧨 Drag the flamethrower onto a tile within 2 steps.',W:13,H:17,o2:0,sc:4,v:6,dr:16,wb:8,hunt:11,exit:'🛗',brief:'Find the flamethrower 🧨, then drag it onto a nearby tile to burn all 3 alien eggs 🥚.',win:'The nest burns. The elevator is yours.'},
+ {n:'Scorched Earth',d:'HARD',m:'reactor',tip:'☠️ The air is toxic! 🫁 canisters refill your oxygen (+20s).',W:13,H:19,o2:4,ox:1,sc:4,v:8,dr:18,wb:8,hunt:12,exit:'🚀',slow:1,brief:'The air is toxic! Reach the reactor ☢️ and hold your tile to arm it, then reach the ship 🚀 in time.',win:'The ship lifts off as the derelict goes up in flames.'}
 ];
 const grid=$('grid'),vp=$('vp'),arrow=$('arrow'),arrow2=$('arrow2');let TS=64,VR=7;
 function layout(){
  const maxW=Math.min(innerWidth-24,360);
  TS=Math.max(44,Math.floor((maxW-2-2*PAD-(VC-1)*GAP)/VC));
- const avail=innerHeight-250-2*PAD;
+ const avail=innerHeight-(LV[LVL].ox?250:226)+(LV[LVL].tip?32:0)-2*PAD;
  VR=Math.min(7,Math.max(5,Math.floor((avail+GAP)/(TS+GAP))));
  grid.style.setProperty('--ts',TS+'px');
  vp.style.width=(VC*TS+(VC-1)*GAP+2*PAD+2)+'px';
@@ -131,13 +133,17 @@ function nb(x,y){return[[1,0],[-1,0],[0,1],[0,-1]].map(([dx,dy])=>[x+dx,y+dy]).f
 function bfs(sx,sy){const d=Array.from({length:H},()=>Array(W).fill(99));d[sy][sx]=0;const q=[[sx,sy]];
  for(let i=0;i<q.length;i++){const[x,y]=q[i];for(const[a,b]of nb(x,y)){if(S.e[ek(x,y,a,b)]=='w'||d[b][a]<99)continue;d[b][a]=d[y][x]+1;q.push([a,b])}}return d}
 /* Maze: a random spanning tree guarantees every room is reachable (no soft-locks); extra walls are knocked out to make loops; doors sit only on open passages and can always be opened. */
+function attached(e,a,b,c,d){
+ const w=(p,q,r,s)=>p<0||q<0||r<0||s<0||p>=W||q>=H||r>=W||s>=H||e[ek(p,q,r,s)]=='w';
+ const ends=b==d?[-1,1].map(o=>[[a,b+o,c,b+o],[a,b,a,b+o],[c,b,c,b+o]]):[-1,1].map(o=>[[a+o,b,a+o,d],[a,b,a+o,b],[a,d,a+o,d]]);
+ return ends.every(g=>g.some(([p,q,r,s])=>w(p,q,r,s)))}
 function gen(){
  const e={},v=Array.from({length:H},()=>Array(W).fill(0)),all=[];
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(x<W-1){e[ek(x,y,x+1,y)]='w';all.push([x,y,x+1,y])}if(y<H-1){e[ek(x,y,x,y+1)]='w';all.push([x,y,x,y+1])}}
  const st=[[SX,SY]];v[SY][SX]=1;
  while(st.length){const[x,y]=st[st.length-1],n=nb(x,y).filter(([a,b])=>!v[b][a]);if(!n.length){st.pop();continue}const[a,b]=n[R(n.length)];delete e[ek(x,y,a,b)];v[b][a]=1;st.push([a,b])}
  all.forEach(([a,b,c,d])=>{const k=ek(a,b,c,d);if(e[k]&&Math.random()<.4)delete e[k]});
- const op=all.filter(([a,b,c,d])=>!e[ek(a,b,c,d)]);
+ const op=all.filter(([a,b,c,d])=>!e[ek(a,b,c,d)]&&attached(e,a,b,c,d));
  for(let i=0;i<LV[LVL].dr&&op.length;i++){const[a,b,c,d]=op.splice(R(op.length),1)[0];e[ek(a,b,c,d)]='d'}
  return e}
 function startLevel(i){
@@ -145,13 +151,13 @@ function startLevel(i){
  grid.innerHTML='';for(let j=0;j<W*H;j++){const d=document.createElement('div');d.className='t';d.dataset.i=j;grid.appendChild(d)}
  T=[...grid.children];grid.style.gridTemplateColumns='repeat('+W+',var(--ts))';
  $('menu').style.display=$('lvls').style.display='none';inMenu=false;
- $('ttl').textContent='L'+(i+1)+' · '+c.n.toUpperCase();$('o2l').textContent=c.m=='reactor'?'☢️':'O₂';
+ $('ttl').textContent='L'+(i+1)+' · '+c.n.toUpperCase();$('o2l').textContent='O₂';$('o2').style.display=c.ox?'flex':'none';$('tip').textContent=c.tip||'';$('tip').style.display=c.tip?'block':'none';
  $('kb').style.color=c.m=='friend'?'#4dff4d':'#fd0';
- init();ensureAudio();
+ init();layout();ensureAudio();
 }
 function init(){
  const c=LV[LVL],rx=c.m=='reactor';
- S={px:SX,py:SY,ax:0,ay:0,scrap:0,noise:0,stam:3,moves:0,over:false,nz:null,held:false,items:{},vents:[],webs:{},fire:{},eggs:[],fuses:[],fr:null,card:false,data:false,cells:0,axe:false,flame:rx,fch:rx?3:0,frest:0,armed:false,arm:0,busy:false,loud:false,fs:0,o2max:rx?90:300,o2:rx?90:300,started:false,suff:false,dark:false,flt:8,e:gen(),mem:Array.from({length:H},()=>Array(W).fill(null))};
+ S={px:SX,py:SY,ax:0,ay:0,scrap:0,noise:0,stam:3,moves:0,over:false,nz:null,held:false,items:{},vents:[],webs:{},fire:{},eggs:[],fuses:[],fr:null,card:false,data:false,cells:0,axe:false,flame:rx,fch:rx?3:0,frest:0,armed:false,arm:0,busy:false,loud:false,fs:0,o2max:O2MAX,o2:O2MAX,started:false,suff:false,dark:false,flt:8,e:gen(),mem:Array.from({length:H},()=>Array(W).fill(null))};
  const f0=bfs(SX,SY);
  do{S.ax=R(W);S.ay=R(H)}while(f0[S.ay][S.ax]<9||(S.ax==EX&&S.ay==EY));
  const used=new Set([SX+','+SY,EX+','+EY,S.ax+','+S.ay]);
@@ -259,7 +265,7 @@ function move(x,y){
  if(x==S.ax&&y==S.ay)return die('You walked straight into it.');
  if(x==EX&&y==EY&&canExit()){S.over=true;look();render();return end(true)}
  const it=S.items[k];
- if(it){delete S.items[k];vib(40);
+ if(it&&!(it=='o2'&&S.armed)){delete S.items[k];vib(40);
   if(it=='o2'){S.o2=Math.min(S.o2max,S.o2+O2CAN);sfx(scrapSfx);say('Oxygen canister: +'+O2CAN+'s')}
   else if(it=='data'){S.data=true;say('Data secured! '+(S.card?'Now reach the elevator ↑':'Now find the access card 🪪.'))}
   else if(it=='card'){S.card=true;say('Access card acquired! '+(S.data?'Now reach the elevator ↑':'Now secure the data 💽.'))}
@@ -279,7 +285,7 @@ function move(x,y){
 function hold(){
  if(S.over||S.busy)return;ensureAudio();
  if(S.rx!=null&&S.px==S.rx&&S.py==S.ry&&!S.armed){S.arm++;say('Arming self-destruct… '+S.arm+'/4');turn();
-  if(!S.over&&S.arm>=4){S.armed=true;vp.classList.add('alarm');vib([200,80,200,80,400]);say('SELF-DESTRUCT ARMED! Get to the ship 🚀. 90 seconds!');render();beat()}return}
+  if(!S.over&&S.arm>=4){S.armed=true;S.o2max=90;S.o2=90;$('o2l').textContent='☢️';breathe.pause();vp.classList.add('alarm');vib([200,80,200,80,400]);say('SELF-DESTRUCT ARMED! Get to the ship 🚀. 90 seconds!');render();beat()}return}
  if(S.stam<1){say('You can’t hold your breath any longer.');return}
  S.stam--;S.held=true;say('You hold your breath. Footsteps…');turn();S.held=false;
 }
@@ -322,18 +328,17 @@ function staticFx(ms,cb){
 function sfx(a){if(muted)return;try{a.currentTime=0;a.play().catch(()=>{})}catch(e){}}
 scrapSfx.volume=.5;
 function o2ui(){const e=$('o2'),c=LV[LVL];
- if(c.m=='reactor'&&!S.armed){$('o2f').style.width='100%';$('o2t').textContent='STANDBY';e.className='idle';return}
  $('o2f').style.width=Math.max(0,S.o2/S.o2max*100)+'%';$('o2t').textContent=Math.ceil(Math.max(0,S.o2))+'s';e.classList.remove('idle');e.classList.toggle('low',S.o2<=O2LOW);e.classList.toggle('mid',S.o2>O2LOW&&S.o2<=25)}
 let lastT=performance.now();
 setInterval(()=>{const now=performance.now(),dt=Math.min(.25,(now-lastT)/1000);lastT=now;
  if(!S||S.over||!S.started||document.hidden||inMenu)return;
  const c=LV[LVL];
  if(c.fl){S.flt-=dt;if(S.flt<=0){S.dark=!S.dark;S.flt=S.dark?3+Math.random()*2:6+Math.random()*6;vp.classList.toggle('dark',S.dark);look();render();if(S.dark)say('The lights fail…')}}
- if(c.m=='reactor'&&!S.armed){o2ui();return}
+ if(!c.ox)return;
  S.o2-=dt;
- if(S.o2<=0){S.o2=0;o2ui();S.suff=true;return die(c.m=='reactor'?'The reactor went critical.':'You ran out of oxygen.')}
+ if(S.o2<=0){S.o2=0;o2ui();S.suff=true;return die(S.armed?'The reactor went critical.':'The toxic air got to you.')}
  o2ui();
- if(c.m!='reactor'){if(S.o2<=O2LOW){if(!muted&&breathe.paused)breathe.play().catch(()=>{})}else breathe.pause()}},100);
+ if(!S.armed){if(S.o2<=O2LOW){if(!muted&&breathe.paused)breathe.play().catch(()=>{})}else breathe.pause()}},100);
 function near(){const adj=D(S.ax,S.ay,S.px,S.py)==1&&S.e[ek(S.ax,S.ay,S.px,S.py)]!='w';if(adj&&!S.near&&!muted){try{caught.currentTime=0;caught.play().catch(()=>{})}catch(e){}}S.near=adj}
 let inMenu=true;
 function bgmPlay(){if(!inMenu&&!muted&&bgm.paused&&!(S&&S.over)){try{bgm.play().catch(()=>{})}catch(e){}}}
