@@ -33,7 +33,7 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 #key span{display:inline-flex;align-items:center;gap:5px}
 #key i{display:inline-block;width:18px;height:5px}
 #o2{display:flex;align-items:center;gap:8px;font-size:13px;flex:none;width:100%;max-width:360px}
-#o2 .bar{flex:1;height:12px;border:1px solid var(--dim);background:#031007}
+#o2 .bar{position:relative;flex:1;height:12px;border:1px solid var(--dim);background:#031007}
 #o2 i{display:block;height:100%;width:100%;background:var(--ph);transition:width .1s linear}
 #o2.mid i{background:var(--amb)}#o2.low i{background:var(--red);animation:fl2 .5s steps(2) infinite}
 #o2.low,#o2.low b{color:var(--red)}@keyframes fl2{50%{opacity:.15}}
@@ -50,6 +50,7 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 #tip{font-size:12px;color:var(--amb);text-align:center;max-width:360px;flex:none;line-height:1.3}
 #hb{width:100%;min-width:90px;height:6px;border:1px solid var(--dim);margin-top:5px;background:#031007}#hbf{display:block;height:100%;width:0;background:var(--amb)}
 #stam{letter-spacing:.05em}.hs.on{color:var(--amb)}.hs.cd{color:#4c8a62}
+#o2 .bar::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),#031007 calc(10% - 2px) 10%)}
 #o2.idle i{background:var(--dim)}#o2t{min-width:56px;text-align:right}
 #vp.dark{animation:fk .35s infinite}@keyframes fk{50%{filter:brightness(.4)}}
 #vp.alarm{box-shadow:0 0 26px #f33 inset;animation:al .8s infinite alternate}@keyframes al{to{box-shadow:0 0 4px #f33 inset}}
@@ -84,7 +85,7 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 <script>
 const $=id=>document.getElementById(id);
 const R=n=>Math.floor(Math.random()*n),D=(a,b,c,d)=>Math.abs(a-c)+Math.abs(b-d);
-const GAP=4,PAD=6,VC=5,O2CAN=20,O2LOW=10,O2MAX=90;
+const GAP=4,PAD=6,VC=5,O2CAN=20,O2LOW=20,O2MAX=100,O2MOVE=2;
 let W=9,H=13,SX=4,SY=12,EX=4,EY=0,EXI='🛗',LVL=0,S,ac,bt,T=[],PROG=1;
 try{PROG=Math.max(1,+localStorage.getItem('pa_prog')||1)}catch(e){}
 const ICON={scrap:'⚙️',o2:'🫁',card:'🪪',cell:'🔋',axe:'🪓',flame:'🧨',data:''};
@@ -93,7 +94,7 @@ const LV=[
  {n:'Dead Power',d:'EASY-MEDIUM',m:'power',W:11,H:15,o2:0,sc:6,v:4,dr:14,wb:0,hunt:10,exit:'🛗',fl:1,brief:'The elevator is dead. Find 3 power cells 🔋 and install each at a fuse box ⚡.',win:'Power restored. The elevator hums to life.'},
  {n:'A Friend in Need',d:'MEDIUM',m:'friend',tip:'🕸️ Webs: stepping into one costs you a turn.',W:11,H:17,o2:0,sc:6,v:4,dr:14,wb:8,hunt:10,exit:'🛗',brief:'Find an axe 🪓, free your friend 👩‍🔧 and get them to the elevator alive.',win:'You and your friend made it out alive.'},
  {n:'Sabotage!',d:'MEDIUM-HARD',m:'eggs',tip:'🧨 Drag the flamethrower onto a tile within 2 steps.',W:13,H:17,o2:0,sc:4,v:6,dr:16,wb:8,hunt:11,exit:'🛗',brief:'Find the flamethrower 🧨, then drag it onto a nearby tile to burn all 3 alien eggs 🥚.',win:'The nest burns. The elevator is yours.'},
- {n:'Scorched Earth',d:'HARD',m:'reactor',tip:'☠️ The air is toxic! 🫁 canisters refill your oxygen (+20s).',W:13,H:19,o2:4,ox:1,sc:4,v:8,dr:18,wb:8,hunt:12,exit:'🚀',slow:1,brief:'The air is toxic! Reach the reactor ☢️ and hold your tile to arm it, then reach the ship 🚀 in time.',win:'The ship lifts off as the derelict goes up in flames.'}
+ {n:'Scorched Earth',d:'HARD',m:'reactor',tip:'☠️ Toxic air! Every turn costs oxygen. 🫁 canisters refill it (+20%).',W:13,H:19,o2:4,ox:1,sc:4,v:8,dr:18,wb:8,hunt:12,exit:'🚀',slow:1,brief:'The air is toxic! Reach the reactor ☢️ and hold your tile to arm it, then reach the ship 🚀 in time.',win:'The ship lifts off as the derelict goes up in flames.'}
 ];
 const grid=$('grid'),vp=$('vp'),arrow=$('arrow'),arrow2=$('arrow2');let TS=64,VR=7;
 function layout(){
@@ -246,6 +247,7 @@ function alienMove(){
 }
 function turn(){S.started=true;
  alienMove();S.moves++;
+ if(LV[LVL].ox&&!S.armed){S.o2=Math.max(0,S.o2-O2MOVE);if(S.o2<=0){S.suff=true;return die('The toxic air got to you.')}}
  if(S.hcd>0&&!S.hide)S.hcd--;
  if(S.flame&&S.fch<3&&++S.frest>=3){S.fch++;S.frest=0}
  for(const k in S.fire)if(--S.fire[k]<=0)delete S.fire[k];
@@ -269,7 +271,7 @@ function move(x,y){
  if(x==EX&&y==EY&&canExit()){S.over=true;look();render();return end(true)}
  const it=S.items[k];
  if(it&&!(it=='o2'&&S.armed)){delete S.items[k];vib(40);
-  if(it=='o2'){S.o2=Math.min(S.o2max,S.o2+O2CAN);sfx(scrapSfx);say('Oxygen canister: +'+O2CAN+'s')}
+  if(it=='o2'){S.o2=Math.min(S.o2max,S.o2+O2CAN);sfx(scrapSfx);say('Oxygen canister: +'+O2CAN+'%')}
   else if(it=='data'){S.data=true;say('Data secured! '+(S.card?'Now reach the elevator ↑':'Now find the access card 🪪.'))}
   else if(it=='card'){S.card=true;say('Access card acquired! '+(S.data?'Now reach the elevator ↑':'Now secure the data 💽.'))}
   else if(it=='cell'){S.cells++;sfx(scrapSfx);say('Power cell acquired 🔋. Take it to a fuse box ⚡')}
@@ -340,14 +342,14 @@ function staticFx(ms,cb){
 function sfx(a){if(muted)return;try{a.currentTime=0;a.play().catch(()=>{})}catch(e){}}
 scrapSfx.volume=.5;
 function o2ui(){const e=$('o2'),c=LV[LVL];
- $('o2f').style.width=Math.max(0,S.o2/S.o2max*100)+'%';$('o2t').textContent=Math.ceil(Math.max(0,S.o2))+'s';e.classList.remove('idle');e.classList.toggle('low',S.o2<=O2LOW);e.classList.toggle('mid',S.o2>O2LOW&&S.o2<=25)}
+ $('o2f').style.width=Math.max(0,S.o2/S.o2max*100)+'%';$('o2t').textContent=Math.ceil(Math.max(0,S.o2))+(S.armed?'s':'%');e.classList.remove('idle');const lo=S.armed?10:O2LOW,mi=S.armed?25:50;e.classList.toggle('low',S.o2<=lo);e.classList.toggle('mid',S.o2>lo&&S.o2<=mi)}
 let lastT=performance.now();
 setInterval(()=>{const now=performance.now(),dt=Math.min(.25,(now-lastT)/1000);lastT=now;
  if(!S||S.over||!S.started||document.hidden||inMenu)return;
  const c=LV[LVL];
  if(c.fl){S.flt-=dt;if(S.flt<=0){S.dark=!S.dark;S.flt=S.dark?3+Math.random()*2:6+Math.random()*6;vp.classList.toggle('dark',S.dark);look();render();if(S.dark)say('The lights fail…')}}
  if(!c.ox)return;
- S.o2-=dt;
+ if(S.armed)S.o2-=dt;
  if(S.o2<=0){S.o2=0;o2ui();S.suff=true;return die(S.armed?'The reactor went critical.':'The toxic air got to you.')}
  o2ui();
  if(!S.armed){if(S.o2<=O2LOW){if(!muted&&breathe.paused)breathe.play().catch(()=>{})}else breathe.pause()}},100);
