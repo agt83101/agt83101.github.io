@@ -48,6 +48,7 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 .lv:disabled{opacity:.35;border-color:var(--dim);color:#4c8a62;background:#050c07}
 .sec{font:inherit;font-size:14px;padding:10px 22px;background:none;color:var(--ph);border:1px solid var(--dim);border-radius:8px}
 #tip{font-size:12px;color:var(--amb);text-align:center;max-width:360px;flex:none;line-height:1.3}
+#stam{letter-spacing:.05em}.hs.on{color:var(--amb)}.hs.cd{color:#4c8a62}
 #o2.idle i{background:var(--dim)}#o2t{min-width:56px;text-align:right}
 #vp.dark{animation:fk .35s infinite}@keyframes fk{50%{filter:brightness(.4)}}
 #vp.alarm{box-shadow:0 0 26px #f33 inset;animation:al .8s infinite alternate}@keyframes al{to{box-shadow:0 0 4px #f33 inset}}
@@ -70,12 +71,12 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 <div id="tip"></div>
 <div id="o2"><span id="o2l">O₂</span><div class="bar"><i id="o2f"></i></div><b id="o2t">60s</b></div>
 <div id="vp"><div id="grid"></div><svg id="arrow" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="#5cf" stroke="#bff" stroke-width="1.5" stroke-linejoin="round"/></svg><svg id="arrow2" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="currentColor" stroke="#ffffffaa" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
-<div id="hud"><div>BREATH <span class="pips" id="stam"></span></div><div id="scrap"></div><div style="display:flex;gap:8px"><div id="slot" class="empty">📡<b id="nc">0</b></div><div id="slot2" class="empty" style="display:none">🧨<b id="fc">0</b></div></div></div>
+<div id="hud"><div>HIDE <b id="stam" class="hs"></b></div><div id="scrap"></div><div style="display:flex;gap:8px"><div id="slot" class="empty">📡<b id="nc">0</b></div><div id="slot2" class="empty" style="display:none">🧨<b id="fc">0</b></div></div></div>
 <div id="key"><span><i style="background:#7fe"></i>Wall</span><span><i style="background:#ffb02e"></i>Closed door</span><span><i style="background:#2f7a4a"></i>Open door</span><span><b style="color:#5cf">➤</b>Exit</span><span><b id="kb" style="color:#fd0">➤</b>Objective</span></div>
 </div>
 <button id="mute" aria-label="Toggle music">🔊</button>
 <div id="menu"><div class="logo">👾</div><h1 class="mt">PROXIMITY<br>ALERT</h1><p class="tag">One motion tracker. One alien. No light.</p><button id="play">PLAY</button>
-<div id="how"><p>Complete each mission objective, then escape the derelict.</p><ul><li>Tap an adjacent room to move</li><li>Hold your own tile to hold breath</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien</li><li>Numbers = steps from the alien (around walls)</li><li><i style="display:inline-block;width:24px;height:5px;background:#ffb02e;vertical-align:middle;margin-right:4px"></i> = door: tap to pry open, but the Alien can open them too</li></ul></div></div>
+<div id="how"><p>Complete each mission objective, then escape the derelict.</p><ul><li>Tap an adjacent room to move</li><li>Tap your own tile to Hide for 2 turns: the Alien loses you and backs off</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien</li><li>Numbers = steps from the alien (around walls)</li><li><i style="display:inline-block;width:24px;height:5px;background:#ffb02e;vertical-align:middle;margin-right:4px"></i> = door: tap to pry open, but the Alien can open them too</li></ul></div></div>
 <div id="lvls"><h1 class="mt" style="font-size:26px">SELECT MISSION</h1><div id="lvlist"></div><button id="back" class="sec">BACK</button></div>
 <div id="ghost">📡</div><canvas id="fx"></canvas>
 <div id="over"><h2 id="ot"></h2><div id="os"></div><button id="again">RETRY</button><button id="tolv">LEVEL SELECT</button></div>
@@ -157,7 +158,7 @@ function startLevel(i){
 }
 function init(){
  const c=LV[LVL],rx=c.m=='reactor';
- S={px:SX,py:SY,ax:0,ay:0,scrap:0,noise:0,stam:3,moves:0,over:false,nz:null,held:false,items:{},vents:[],webs:{},fire:{},eggs:[],fuses:[],fr:null,card:false,data:false,cells:0,axe:false,flame:rx,fch:rx?3:0,frest:0,armed:false,arm:0,busy:false,loud:false,fs:0,o2max:O2MAX,o2:O2MAX,started:false,suff:false,dark:false,flt:8,e:gen(),mem:Array.from({length:H},()=>Array(W).fill(null))};
+ S={px:SX,py:SY,ax:0,ay:0,scrap:0,noise:0,stam:3,hide:0,hcd:0,moves:0,over:false,nz:null,held:false,items:{},vents:[],webs:{},fire:{},eggs:[],fuses:[],fr:null,card:false,data:false,cells:0,axe:false,flame:rx,fch:rx?3:0,frest:0,armed:false,arm:0,busy:false,loud:false,fs:0,o2max:O2MAX,o2:O2MAX,started:false,suff:false,dark:false,flt:8,e:gen(),mem:Array.from({length:H},()=>Array(W).fill(null))};
  const f0=bfs(SX,SY);
  do{S.ax=R(W);S.ay=R(H)}while(f0[S.ay][S.ax]<9||(S.ax==EX&&S.ay==EY));
  const used=new Set([SX+','+SY,EX+','+EY,S.ax+','+S.ay]);
@@ -205,7 +206,7 @@ function render(){
   if(m&&m.lit&&m.al)h='👾';
   else if(isE){h=EXI;big=1}
   else if(S.over&&!S.suff&&x==S.ax&&y==S.ay)h='👽';
-  else if(isP)h='👨‍🚀';
+  else if(isP)h=S.hide>0?'<span style="opacity:.5">👨‍🚀</span>':'👨‍🚀';
   else if((h=bigObj(x,y,m)))big=1;
   else if(m&&m.n)h=m.n;
   let ic='';
@@ -218,7 +219,7 @@ function render(){
   t.innerHTML=h+bd+(ic?'<span class="ic">'+ic+'</span>':'')+(sh.length?'<i class="w" style="box-shadow:'+sh.join(',')+'"></i>':'');
  });
  camera();
- o2ui();$('stam').innerHTML=[0,1,2].map(i=>'<span class="'+(i<S.stam?'':'off')+'"></span>').join('');
+ o2ui();$('stam').textContent=S.hide>0?'HIDING':S.hcd>0?'WAIT '+S.hcd:'READY';$('stam').className='hs '+(S.hide>0?'on':S.hcd>0?'cd':'');
  $('scrap').innerHTML=objText();
  $('nc').textContent=S.noise;$('slot').classList.toggle('empty',S.noise<1);
  const fm=LV[LVL].m=='eggs'||LV[LVL].m=='reactor';$('slot2').style.display=fm?'flex':'none';$('fc').textContent=S.fch;$('slot2').classList.toggle('empty',!S.flame||S.fch<1);
@@ -227,10 +228,11 @@ function alienMove(){
  const a=S,cfg=LV[LVL];let tgt=null;const F=bfs(a.ax,a.ay);
  if(a.nz)tgt=[a.nz.x,a.nz.y];
  else if(a.fr&&a.fr.freed&&F[a.fr.y][a.fr.x]<=cfg.hunt)tgt=[a.fr.x,a.fr.y];
- else if(a.loud||a.armed||(!a.held&&F[a.py][a.px]<=cfg.hunt))tgt=[a.px,a.py];
+ else if(!a.held&&(a.loud||a.armed||F[a.py][a.px]<=cfg.hunt))tgt=[a.px,a.py];
  const ns=nb(a.ax,a.ay).filter(([x,y])=>a.e[ek(a.ax,a.ay,x,y)]!='w'&&!a.fire[x+','+y]);
  let nx;
- if(!ns.length)nx=[a.ax,a.ay];
+ if(a.hide>0&&!tgt&&ns.length){const fp=bfs(a.px,a.py);ns.sort((p,q)=>fp[q[1]][q[0]]-fp[p[1]][p[0]]||Math.random()-.5);nx=ns[0]}
+ else if(!ns.length)nx=[a.ax,a.ay];
  else if(!tgt||Math.random()<(a.armed?.05:.22))nx=ns[R(ns.length)];
  else if(a.ax==tgt[0]&&a.ay==tgt[1])nx=[a.ax,a.ay];
  else{const f=bfs(tgt[0],tgt[1]);ns.sort((p,q)=>f[p[1]][p[0]]-f[q[1]][q[0]]);nx=ns[0]}
@@ -243,7 +245,7 @@ function alienMove(){
 }
 function turn(){S.started=true;
  alienMove();S.moves++;
- if(S.moves%3==0&&S.stam<3)S.stam++;
+ if(S.hcd>0&&!S.hide)S.hcd--;
  if(S.flame&&S.fch<3&&++S.frest>=3){S.fch++;S.frest=0}
  for(const k in S.fire)if(--S.fire[k]<=0)delete S.fire[k];
  if(S.ax==S.px&&S.ay==S.py)return die('It found you.');
@@ -286,8 +288,14 @@ function hold(){
  if(S.over||S.busy)return;ensureAudio();
  if(S.rx!=null&&S.px==S.rx&&S.py==S.ry&&!S.armed){S.arm++;say('Arming self-destruct… '+S.arm+'/4');turn();
   if(!S.over&&S.arm>=4){S.armed=true;S.o2max=90;S.o2=90;$('o2l').textContent='☢️';breathe.pause();vp.classList.add('alarm');vib([200,80,200,80,400]);say('SELF-DESTRUCT ARMED! Get to the ship 🚀. 90 seconds!');render();beat()}return}
- if(S.stam<1){say('You can’t hold your breath any longer.');return}
- S.stam--;S.held=true;say('You hold your breath. Footsteps…');turn();S.held=false;
+}
+/* Hide: 2 frozen turns (like prying a door) during which the Alien loses you and backs away; then a 2-turn recharge */
+function hide(){
+ if(S.over||S.busy)return;ensureAudio();
+ if(S.hcd>0){say('Hide is recharging…');vib(30);return}
+ S.busy=true;S.held=true;S.hide=2;say('You freeze and hide…');render();
+ let i=0;(function st(){if(S.over)return;turn();if(S.over)return;S.hide--;
+  if(++i<2)setTimeout(st,450);else{S.busy=false;S.held=false;S.hide=0;S.hcd=2;say('You can move again.');render()}})()
 }
 function place(x,y){
  if(S.over||S.busy||S.noise<1||(x==S.px&&y==S.py))return;
@@ -363,7 +371,7 @@ let hp=null,hf=false;
 grid.addEventListener('pointerdown',e=>{
  const t=e.target.closest('.t');if(!t||S.over||S.busy)return;
  const i=+t.dataset.i,x=i%W,y=i/W|0;hp={x,y};hf=false;
- if(x==S.px&&y==S.py){t.classList.add('holding');
+ if(x==S.px&&y==S.py&&S.rx!=null&&S.px==S.rx&&S.py==S.ry&&!S.armed){t.classList.add('holding');
   const fire=()=>{hf=true;t.classList.remove('holding');hold();
    if(hp&&!S.over&&S.rx!=null&&S.px==S.rx&&S.py==S.ry&&!S.armed){t.classList.add('holding');hp.timer=setTimeout(fire,450)}};
   hp.timer=setTimeout(fire,450)}
@@ -374,6 +382,7 @@ function endPress(e,cancel){
  const el=document.elementFromPoint(e.clientX,e.clientY),t=el&&el.closest('.t');if(!t)return;
  const i=+t.dataset.i,x=i%W,y=i/W|0;
  if(x==p.x&&y==p.y&&D(x,y,S.px,S.py)==1)move(x,y);
+ else if(x==p.x&&y==p.y&&x==S.px&&y==S.py)hide();
 }
 addEventListener('pointerup',e=>endPress(e));addEventListener('pointercancel',e=>endPress(e,1));
 /* drag from an inventory slot onto a tile */
