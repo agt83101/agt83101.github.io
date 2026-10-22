@@ -80,7 +80,7 @@ h1{font-size:15px;letter-spacing:.3em;margin:0;text-shadow:0 0 8px var(--ph)}
 </div>
 <button id="mute" aria-label="Toggle music">🔊</button>
 <div id="menu"><div class="logo">👾</div><h1 class="mt">PROXIMITY<br>ALERT</h1><p class="tag">One motion tracker. One alien. No light.</p><button id="play">PLAY</button>
-<div id="how"><p>Complete each mission objective, then escape the derelict.</p><ul><li>Tap an adjacent tile to move</li><li>Tap your own tile to Hide for 4 turns: the Alien loses you and backs off</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien</li><li>Numbers = steps from the alien (around walls)</li><li><i style="display:inline-block;width:24px;height:5px;background:#ffb02e;vertical-align:middle;margin-right:4px"></i> = door: tap to pry open, but the Alien can open them too</li></ul></div></div>
+<div id="how"><p>Complete each mission objective, then escape the derelict.</p><ul><li>Tap an adjacent tile to move</li><li>Tap your own tile to Hide for 3 turns: the Alien loses you and backs off</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien</li><li>Numbers = steps from the alien (around walls)</li><li><i style="display:inline-block;width:24px;height:5px;background:#ffb02e;vertical-align:middle;margin-right:4px"></i> = door: tap to pry open, but the Alien can open them too</li></ul></div></div>
 <div id="lvls"><h1 class="mt" style="font-size:26px">SELECT MISSION</h1><div id="lvlist"></div><button id="back" class="sec">BACK</button></div>
 <div id="ghost">📡</div><canvas id="fx"></canvas>
 <div id="over"><h2 id="ot"></h2><div id="os"></div><button id="again">RETRY</button><button id="tolv">LEVEL SELECT</button></div>
@@ -297,16 +297,16 @@ function hold(){
  if(S.rx!=null&&S.px==S.rx&&S.py==S.ry&&!S.armed){S.arm++;say('Arming self-destruct… '+S.arm+'/4');turn();
   if(!S.over&&S.arm>=4){S.armed=true;sfx(alarmSfx);S.o2max=90;S.o2=90;$('o2l').textContent='☢️';breathe.pause();vp.classList.add('alarm');vib([200,80,200,80,400]);say('SELF-DESTRUCT ARMED! Get to the ship 🚀. 90 seconds!');render();beat()}return}
 }
-/* Hide: 4 frozen turns (one every HT ms, with a filling meter) during which the Alien loses you and backs away; then a 2-turn recharge */
+/* Hide: 3 frozen turns (one every HT ms, with a filling meter) during which the Alien loses you and backs away; then a 3-turn recharge */
 const HT=800;
 function hide(){
  if(S.over||S.busy)return;ensureAudio();
  if(S.hcd>0){say('Hide is recharging…');vib(30);return}
- S.busy=true;S.held=true;S.hide=4;say('You freeze and hide… (4)');render();
- const f=$('hbf');f.style.transition='none';f.style.width='0%';void f.offsetWidth;f.style.transition='width '+(HT*4)+'ms linear';f.style.width='100%';
+ S.busy=true;S.held=true;S.hide=3;say('You freeze and hide… (3)');render();
+ const f=$('hbf');f.style.transition='none';f.style.width='0%';void f.offsetWidth;f.style.transition='width '+(HT*3)+'ms linear';f.style.width='100%';
  let i=0;(function st(){setTimeout(()=>{if(S.over)return;turn();if(S.over)return;S.hide--;
-  if(++i<4){say('Hiding… ('+S.hide+')');st()}
-  else{S.busy=false;S.held=false;S.hide=0;S.hcd=2;say('You can move again.');f.style.transition='none';f.style.width='0%';render()}},HT)})()
+  if(++i<3){say('Hiding… ('+S.hide+')');st()}
+  else{S.busy=false;S.held=false;S.hide=0;S.hcd=3;say('You can move again.');f.style.transition='none';f.style.width='0%';render()}},HT)})()
 }
 function place(x,y){
  if(S.over||S.busy||S.noise<1||(x==S.px&&y==S.py))return;
