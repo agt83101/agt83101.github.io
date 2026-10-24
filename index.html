@@ -54,7 +54,8 @@ h2{font-size:20px;letter-spacing:.12em;margin:0;text-shadow:0 0 8px var(--ph)}
 .sec{font:inherit;font-size:16px;padding:10px 22px;background:none;color:var(--ph);border:1px solid var(--dim);border-radius:8px}
 #tip{font-size:16px;color:var(--amb);text-align:center;max-width:360px;flex:none;line-height:1.3}
 #hb{width:100%;min-width:90px;height:6px;border:1px solid var(--dim);margin-top:5px;background:#031007}#hbf{display:block;height:100%;width:0;background:var(--amb)}
-#stam{letter-spacing:.05em}.hs.on{color:var(--amb)}.hs.cd{color:#4c8a62}
+#stam{letter-spacing:.05em}.hs.on{color:var(--amb)}.hs.bad{color:#ff5a5a}
+#vp.chased{box-shadow:0 0 26px #ff3b3b inset;animation:chp .5s infinite alternate}@keyframes chp{to{box-shadow:0 0 6px #ff3b3b inset}}.hs.cd{color:#4c8a62}
 #o2 .bar::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),#031007 calc(10% - 2px) 10%)}
 #o2.idle i{background:var(--dim)}#o2t{min-width:56px;text-align:right}
 #vp.dark{animation:fk .35s infinite}@keyframes fk{50%{filter:brightness(.4)}}
@@ -86,7 +87,7 @@ h2{font-size:20px;letter-spacing:.12em;margin:0;text-shadow:0 0 8px var(--ph)}
 </div>
 <button id="home" aria-label="Home">🏠</button><button id="mute" aria-label="Toggle music">🔊</button>
 <div id="menu"><div class="logo">👾</div><h1 class="mt">PROXIMITY<br>ALERT</h1><p class="tag">One motion tracker. One alien. No light.</p><button id="play">PLAY</button>
-<div id="how"><p>Complete each mission objective, then escape the derelict.</p><ul><li>Tap an adjacent tile to move.</li><li>Tap your own tile to Hide for 3 turns and the Alien loses you.</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien.</li><li>Numbers = proximity to alien.</li><li>Doors require 2 moves to pry open.</li></ul></div></div>
+<div id="how"><p>Complete each mission objective, then escape the derelict.</p><ul><li>Tap an adjacent tile to move.</li><li>Tap your own tile to Hide for 3 turns and the Alien loses you.</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien.</li><li>Numbers = proximity to alien.</li><li>Doors require 2 moves to pry open.</li><li>🛡️ Safe Room: step inside and the Alien retreats for 3 turns.</li><li>Once the Alien spots you, you can’t hide and noisemakers won’t work.</li></ul></div></div>
 <div id="lvls"><h1 class="mt" style="font-size:26px">SELECT MISSION</h1><div id="lvlist"></div><button id="back" class="sec">BACK</button></div>
 <div id="ghost">📡</div><canvas id="fx"></canvas>
 <div id="over"><div id="oi"></div><h2 id="ot"></h2><div id="os"></div><button id="again">RETRY</button><button id="tolv">LEVEL SELECT</button></div>
@@ -96,13 +97,14 @@ const R=n=>Math.floor(Math.random()*n),D=(a,b,c,d)=>Math.abs(a-c)+Math.abs(b-d);
 const GAP=4,PAD=6,VC=5,O2MAX=90;
 let W=9,H=13,SX=4,SY=12,EX=4,EY=0,EXI='🛗',LVL=0,S,ac,bt,T=[],PROG=1;
 try{PROG=Math.max(1,+localStorage.getItem('pa_prog')||1)}catch(e){}
+let GSAFE=[];
 const ICON={scrap:'⚙️',o2:'🫁',card:'🪪',cell:'🔋',axe:'🪓',flame:'🧨',data:''};
 const LV=[
- {n:'Black Box',d:'EASY',m:'disc',W:9,H:13,o2:0,sc:6,v:4,dr:12,wb:0,hunt:8,exit:'🛗',brief:'Find the data disc 💽 and the access card 🪪, then reach the elevator.',win:'The elevator doors close with the data secured.'},
- {n:'Dead Power',d:'EASY-MEDIUM',m:'power',W:11,H:15,o2:0,sc:6,v:4,dr:14,wb:0,hunt:10,exit:'🛗',fl:1,brief:'The elevator is dead. Find 3 power cells 🔋 and install each at a fuse box ⚡.',win:'Power restored. The elevator hums to life.'},
- {n:'A Friend in Need',d:'MEDIUM',m:'friend',tip:'🕸️ Webs: you get stuck for 3 turns.',W:11,H:17,o2:0,sc:6,v:4,dr:14,wb:8,hunt:10,exit:'🛗',brief:'Find an axe 🪓, free your friend 👩‍🔧 and get them to the elevator alive.',win:'You and your friend made it out alive.'},
- {n:'Sabotage!',d:'MEDIUM-HARD',m:'eggs',tip:'🧨 Drag the flamethrower onto a tile within 2 steps.',W:13,H:17,o2:0,sc:4,v:6,dr:16,wb:8,hunt:11,exit:'🛗',brief:'Find the flamethrower 🧨, then drag it onto a nearby tile to burn all 3 alien eggs 🥚.',win:'The nest burns. The elevator is yours.'},
- {n:'Scorched Earth',d:'HARD',m:'reactor',tip:'☢️ Three aliens roam the ship. Arm the reactor, then run for the ship 🚀!',W:13,H:19,o2:0,ox:1,al:3,sc:4,v:8,dr:18,wb:8,hunt:12,exit:'🚀',slow:1,brief:'Reach the reactor ☢️ and hold your tile to arm it. Then reach the ship 🚀 before the reactor goes critical.',win:'The ship lifts off as the derelict goes up in flames.'}
+ {n:'Black Box',d:'EASY',m:'disc',sr:3,W:9,H:13,o2:0,sc:6,v:4,dr:12,wb:0,hunt:8,exit:'🛗',brief:'Find the data disc 💽 and the access card 🪪, then reach the elevator.',win:'The elevator doors close with the data secured.'},
+ {n:'Dead Power',d:'EASY-MEDIUM',m:'power',sr:4,W:11,H:15,o2:0,sc:6,v:4,dr:14,wb:0,hunt:10,exit:'🛗',fl:1,brief:'The elevator is dead. Find 3 power cells 🔋 and install each at a fuse box ⚡.',win:'Power restored. The elevator hums to life.'},
+ {n:'A Friend in Need',d:'MEDIUM',m:'friend',sr:4,tip:'🕸️ Webs: you get stuck for 3 turns.',W:11,H:17,o2:0,sc:6,v:4,dr:14,wb:8,hunt:10,exit:'🛗',brief:'Find an axe 🪓, free your friend 👩‍🔧 and get them to the elevator alive.',win:'You and your friend made it out alive.'},
+ {n:'Sabotage!',d:'MEDIUM-HARD',m:'eggs',sr:5,tip:'🧨 The flamethrower can ward off the Alien if placed on the same tile for 4 turns.',W:13,H:17,o2:0,sc:4,v:6,dr:16,wb:8,hunt:11,exit:'🛗',brief:'Find the flamethrower 🧨, then drag it onto a nearby tile to burn all 3 alien eggs 🥚.',win:'The nest burns. The elevator is yours.'},
+ {n:'Scorched Earth',d:'HARD',m:'reactor',sr:5,tip:'🧨 The flamethrower can ward off the Alien if placed on the same tile for 4 turns.',W:13,H:19,o2:0,ox:1,al:3,sc:4,v:8,dr:18,wb:8,hunt:12,exit:'🚀',slow:1,brief:'Reach the reactor ☢️ and hold your tile to arm it. Then reach the ship 🚀 before the reactor goes critical.',win:'The ship lifts off as the derelict goes up in flames.'}
 ];
 const grid=$('grid'),vp=$('vp'),arrow=$('arrow'),arrow2=$('arrow2');let TS=64,VR=7;
 function layout(){
@@ -158,12 +160,24 @@ function gen(){
  const st=[[SX,SY]];v[SY][SX]=1;
  while(st.length){const[x,y]=st[st.length-1],n=nb(x,y).filter(([a,b])=>!v[b][a]);if(!n.length){st.pop();continue}const[a,b]=n[R(n.length)];delete e[ek(x,y,a,b)];v[b][a]=1;st.push([a,b])}
  all.forEach(([a,b,c,d])=>{const k=ek(a,b,c,d);if(e[k]&&Math.random()<.4)delete e[k]});
+ /* make sure there are enough dead ends to hold the Safe Rooms: re-wall a corridor tile if the maze stays connected */
+ const deg=(x,y)=>nb(x,y).filter(([p,q])=>e[ek(x,y,p,q)]!='w').length;
+ const conn=()=>{const seen=new Set([SX+','+SY]),q=[[SX,SY]];for(let i=0;i<q.length;i++){const[x,y]=q[i];for(const[a,b]of nb(x,y)){if(e[ek(x,y,a,b)]=='w'||seen.has(a+','+b))continue;seen.add(a+','+b);q.push([a,b])}}return seen.size==W*H};
+ const nDead=()=>{let n=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(deg(x,y)==1&&!(x==SX&&y==SY)&&!(x==EX&&y==EY))n++;return n};
+ for(let t=0;t<800&&nDead()<LV[LVL].sr+4;t++){const x=R(W),y=R(H);if(deg(x,y)!=2||(x==SX&&y==SY)||(x==EX&&y==EY))continue;
+  const o=nb(x,y).filter(([p,q])=>e[ek(x,y,p,q)]!='w'),[p,q]=o[R(2)],k=ek(x,y,p,q);e[k]='w';if(!conn())delete e[k]}
  const op=all.filter(([a,b,c,d])=>!e[ek(a,b,c,d)]&&attached(e,a,b,c,d));
- const jn=new Set();let placed=0;
+ const jn=new Set(),pt=(a,b,c,d)=>b==d?[(a+1)+','+b,(a+1)+','+(b+1)]:[a+','+(b+1),(a+1)+','+(b+1)];
+ /* Safe Rooms: dead-end tiles (3 walls) whose single opening gets a door */
+ GSAFE=[];
+ const dead=(x,y)=>nb(x,y).filter(([p,q])=>e[ek(x,y,p,q)]!='w').length==1&&!(x==SX&&y==SY)&&!(x==EX&&y==EY);
+ const cand=op.filter(([a,b,c,d])=>dead(a,b)||dead(c,d)).sort(()=>Math.random()-.5);
+ for(const[a,b,c,d]of cand){if(GSAFE.length>=LV[LVL].sr)break;const P=pt(a,b,c,d);if(P.some(q=>jn.has(q)))continue;
+  P.forEach(q=>jn.add(q));e[ek(a,b,c,d)]='d';GSAFE.push(dead(a,b)?a+','+b:c+','+d)}
+ let placed=0;
  while(placed<LV[LVL].dr&&op.length){const[a,b,c,d]=op.splice(R(op.length),1)[0];
-  const pts=b==d?[(a+1)+','+b,(a+1)+','+(b+1)]:[a+','+(b+1),(a+1)+','+(b+1)];
-  if(pts.some(q=>jn.has(q)))continue;
-  pts.forEach(q=>jn.add(q));e[ek(a,b,c,d)]='d';placed++}
+  if(e[ek(a,b,c,d)])continue;const P=pt(a,b,c,d);if(P.some(q=>jn.has(q)))continue;
+  P.forEach(q=>jn.add(q));e[ek(a,b,c,d)]='d';placed++}
  return e}
 function startLevel(i){
  LVL=i;const c=LV[i];W=c.W;H=c.H;SX=EX=W>>1;SY=H-1;EY=0;EXI=c.exit;
@@ -176,10 +190,10 @@ function startLevel(i){
 }
 function init(){
  const c=LV[LVL],rx=c.m=='reactor';
- S={px:SX,py:SY,ax:0,ay:0,scrap:0,noise:0,stam:3,hide:0,hcd:0,moves:0,over:false,nz:null,held:false,items:{},vents:[],webs:{},fire:{},wv:new Set(),eggs:[],fuses:[],fr:null,card:false,data:false,cells:0,axe:false,flame:rx,fch:rx?3:0,frest:0,armed:false,arm:0,busy:false,loud:false,fs:0,o2max:O2MAX,o2:O2MAX,started:false,suff:false,dark:false,flt:8,e:gen(),mem:Array.from({length:H},()=>Array(W).fill(null))};
- const f0=bfs(SX,SY);
- const used=new Set([SX+','+SY,EX+','+EY]);S.al=[];
- for(let i=0;i<(c.al||1);i++){let x,y,n=0;do{x=R(W);y=R(H);n++}while((f0[y][x]<9||used.has(x+','+y)||S.al.some(q=>D(x,y,q.x,q.y)<5))&&n<800);used.add(x+','+y);S.al.push({x,y})}
+ S={px:SX,py:SY,ax:0,ay:0,scrap:0,noise:0,stam:3,hide:0,hcd:0,moves:0,over:false,nz:null,held:false,items:{},vents:[],webs:{},fire:{},wv:new Set(),safe:{},eggs:[],fuses:[],fr:null,card:false,data:false,cells:0,axe:false,flame:rx,fch:rx?3:0,frest:0,armed:false,arm:0,busy:false,loud:false,fs:0,o2max:O2MAX,o2:O2MAX,started:false,suff:false,dark:false,flt:8,e:gen(),mem:Array.from({length:H},()=>Array(W).fill(null))};
+ const f0=bfs(SX,SY);GSAFE.forEach(k=>{S.safe[k]={used:false}});
+ const used=new Set([SX+','+SY,EX+','+EY,...GSAFE]);S.al=[];
+ for(let i=0;i<(c.al||1);i++){let x,y,n=0;do{x=R(W);y=R(H);n++}while((f0[y][x]<9||used.has(x+','+y)||S.al.some(q=>D(x,y,q.x,q.y)<5))&&n<800);used.add(x+','+y);S.al.push({x,y,chase:false,flee:0})}
  const pick=(m=0,e=0,sep=[],sd=0)=>{let x,y,n=0;do{x=R(W);y=R(H);n++}while((used.has(x+','+y)||f0[y][x]<m||D(x,y,EX,EY)<e||sep.some(p=>D(x,y,p.x,p.y)<sd))&&n<800);used.add(x+','+y);return{x,y}};
  const put=(t,p)=>{S.items[p.x+','+p.y]=t};
  for(let i=0;i<c.sc;i++)put('scrap',pick());
@@ -232,6 +246,7 @@ function render(){
   else if(m&&m.n)h=m.n;
   let ic='';
   if(m){if(S.items[k]&&!big)ic=ICON[S.items[k]];if(S.vents.some(v=>v[0]==x&&v[1]==y))ic='🕳️'}
+  if(m&&S.safe[k])ic=S.safe[k].used?'<span style="opacity:.35">🛡️</span>':'🛡️';
   if(isE&&!ex)ic='🔒';
   if(S.fr&&!S.fr.freed&&x==S.fr.x&&y==S.fr.y&&!(S.axe&&isP))ic='🔒';
   if(S.nz&&S.nz.x==x&&S.nz.y==y)ic='📡';
@@ -242,31 +257,54 @@ function render(){
   t.innerHTML=hh+bd+(ic?'<span class="ic">'+ic+'</span>':'')+(sh.length?'<i class="w" style="box-shadow:'+sh.join(',')+'"></i>':'');
  });
  camera();
- o2ui();$('stam').textContent=S.hide>0?'HIDING':S.hcd>0?'WAIT '+S.hcd:'READY';$('stam').className='hs '+(S.hide>0?'on':S.hcd>0?'cd':'');
+ o2ui();const chased=S.al.some(q=>q.chase)&&!S.over;vp.classList.toggle('chased',chased);
+ $('stam').textContent=chased?'SPOTTED':S.hide>0?'HIDING':S.hcd>0?'WAIT '+S.hcd:'READY';$('stam').className='hs '+(chased?'bad':S.hide>0?'on':S.hcd>0?'cd':'');
  $('scrap').innerHTML=objText();
  $('nc').textContent=S.noise;$('slot').classList.toggle('empty',S.noise<1);
  const fm=LV[LVL].m=='eggs'||LV[LVL].m=='reactor';$('slot2').style.display=fm?'flex':'none';$('fc').textContent=S.fch;$('slot2').classList.toggle('empty',!S.flame||S.fch<1);
 }
-function alienStep(al){
- const a=S,cfg=LV[LVL];let tgt=null;const F=bfs(al.x,al.y);
- if(a.nz)tgt=[a.nz.x,a.nz.y];
- else if(a.fr&&a.fr.freed&&F[a.fr.y][a.fr.x]<=cfg.hunt)tgt=[a.fr.x,a.fr.y];
- else if(!a.held&&(a.loud||a.armed||F[a.py][a.px]<=cfg.hunt))tgt=[a.px,a.py];
- let ns=nb(al.x,al.y).filter(([x,y])=>a.e[ek(al.x,al.y,x,y)]!='w'&&!a.fire[x+','+y]);
- const fr=ns.filter(([x,y])=>!a.al.some(q=>q!=al&&q.x==x&&q.y==y));if(fr.length)ns=fr;
- let nx;
- if(a.hide>0&&!tgt&&ns.length){const fp=bfs(a.px,a.py);ns.sort((p,q)=>fp[q[1]][q[0]]-fp[p[1]][p[0]]||Math.random()-.5);nx=ns[0]}
- else if(!ns.length)nx=[al.x,al.y];
- else if(!tgt||Math.random()<(a.armed?.05:.22))nx=ns[R(ns.length)];
- else if(al.x==tgt[0]&&al.y==tgt[1])nx=[al.x,al.y];
- else{const f=bfs(tgt[0],tgt[1]);ns.sort((p,q)=>f[p[1]][p[0]]-f[q[1]][q[0]]);nx=ns[0]}
- const dk=ek(al.x,al.y,nx[0],nx[1]);
+function moveAlien(al,nx){
+ const a=S,dk=ek(al.x,al.y,nx[0],nx[1]);
  if(a.e[dk]=='d'){a.e[dk]='o';if(D(nx[0],nx[1],a.px,a.py)<=4){say('A door grinds open nearby…');vib(120)}}
  al.x=nx[0];al.y=nx[1];
  const vi=a.vents.findIndex(v=>v[0]==al.x&&v[1]==al.y);
  if(vi>=0){const o=a.vents[vi^1];al.x=o[0];al.y=o[1];say('Something scrabbles through the vents…')}
 }
-function alienMove(){S.al.forEach(alienStep);if(S.nz&&--S.nz.t<=0)S.nz=null}
+function openNs(al){const a=S,ns=nb(al.x,al.y).filter(([x,y])=>a.e[ek(al.x,al.y,x,y)]!='w'&&!a.fire[x+','+y]&&!a.safe[x+','+y]);
+ const fr=ns.filter(([x,y])=>!a.al.some(q=>q!=al&&q.x==x&&q.y==y));return fr.length?fr:ns}
+function flee(al,ns){if(!ns.length)return;const fp=bfs(S.px,S.py);ns.sort((p,q)=>fp[q[1]][q[0]]-fp[p[1]][p[0]]||Math.random()-.5);moveAlien(al,ns[0])}
+/* states: patrol/stalk (can be lured by a noisemaker, you can hide) -> chase (it has seen you: no hiding, noise ignored) -> retreat (flame / Safe Room) */
+function alienStep(al){
+ const a=S,cfg=LV[LVL],F=bfs(al.x,al.y),inSafe=!!a.safe[a.px+','+a.py],ns=openNs(al);
+ if(inSafe)al.chase=false;
+ if(al.chase&&F[a.py][a.px]>cfg.hunt+3)al.chase=false;
+ if(al.flee>0){al.flee--;flee(al,ns);return}
+ if(a.nz&&a.nz.al===al&&!al.chase)return;
+ let tgt=null;
+ if(a.fr&&a.fr.freed&&F[a.fr.y][a.fr.x]<=cfg.hunt)tgt=[a.fr.x,a.fr.y];
+ else if(!inSafe&&(al.chase||(!a.held&&(a.loud||a.armed||F[a.py][a.px]<=cfg.hunt))))tgt=[a.px,a.py];
+ if(a.hide>0&&!tgt){flee(al,ns);return}
+ if(!ns.length)return;
+ let nx;
+ if(!tgt||Math.random()<(al.chase?.08:a.armed?.05:.22))nx=ns[R(ns.length)];
+ else if(al.x==tgt[0]&&al.y==tgt[1])return;
+ else{const f=bfs(tgt[0],tgt[1]);ns.sort((p,q)=>f[p[1]][p[0]]-f[q[1]][q[0]]);nx=ns[0]}
+ moveAlien(al,nx);
+}
+function sees(al){
+ if(S.hide>0||S.safe[S.px+','+S.py])return false;
+ const dx=S.px-al.x,dy=S.py-al.y;if(dx&&dy)return false;
+ const d=Math.abs(dx)+Math.abs(dy);if(d>7)return false;
+ const sx=Math.sign(dx),sy=Math.sign(dy);let x=al.x,y=al.y;
+ for(let i=0;i<d;i++){const e=S.e[ek(x,y,x+sx,y+sy)];if(e=='w'||e=='d')return false;x+=sx;y+=sy}
+ return true}
+function alienMove(){
+ if(S.nz&&!S.nz.al){
+  const el=S.al.filter(q=>!q.chase&&!q.flee).sort((p,q)=>D(p.x,p.y,S.px,S.py)-D(q.x,q.y,S.px,S.py))[0];
+  if(el){S.nz.al=el;el.x=S.nz.x;el.y=S.nz.y;say('The Alien is drawn to the noise…')}
+  else{say('The Alien ignores the noise. It is chasing you!');S.nz=null}}
+ S.al.forEach(alienStep);
+ if(S.nz&&--S.nz.t<=0)S.nz=null}
 function turn(){S.started=true;
  alienMove();S.moves++;
  if(S.hcd>0&&!S.hide)S.hcd--;
@@ -274,6 +312,9 @@ function turn(){S.started=true;
  for(const k in S.fire)if(--S.fire[k]<=0)delete S.fire[k];
  if(S.al.some(q=>q.x==S.px&&q.y==S.py))return die('It found you.');
  if(S.fr&&S.fr.freed&&S.al.some(q=>q.x==S.fr.x&&q.y==S.fr.y))return die('The Alien took your friend. Mission failed.');
+ const was=S.al.some(q=>q.chase);
+ S.al.forEach(q=>{if(!q.chase&&!q.flee&&sees(q))q.chase=true});
+ if(!was&&S.al.some(q=>q.chase)){say('👁️ It has spotted you! Run!');vib([120,60,120])}
  look();render();beat();near();
 }
 function xturn(m){say(m);turn()}
@@ -299,6 +340,8 @@ function move(x,y){
   else if(it=='flame'){S.flame=true;S.fch=3;say('Flamethrower acquired 🧨! Drag it onto a tile within 2 steps.')}
   else{S.scrap++;sfx(scrapSfx);say('Scrap recovered ('+S.scrap+'/2).');if(S.scrap>=2){S.scrap-=2;S.noise++;say('2 scrap used: noisemaker crafted 📡')}}}
  else say(x==EX&&y==EY?'Exit locked. Missing: '+missing():'');
+ const sr=S.safe[k];
+ if(sr){if(!sr.used){sr.used=true;S.al.forEach(q=>{q.chase=false;q.flee=3});say('🛡️ Safe Room! The Alien retreats for 3 turns.');vib([60,40,60])}else say('This Safe Room has already been used.')}
  if(S.webs[k]){delete S.webs[k];S.stuck=1;sfx(webSfx)}
  turn();if(S.over)return;
  if(S.stuck){S.stuck=0;work('Caught in an alien web! Struggling free…',3,()=>say('You tear free of the web.'),1);return}
@@ -316,6 +359,7 @@ function hold(){
 const HT=800;
 function hide(){
  if(S.over||S.busy)return;ensureAudio();
+ if(S.al.some(q=>q.chase)){say('It has spotted you. You can’t hide!');vib(60);return}
  if(S.hcd>0){say('Hide is recharging…');vib(30);return}
  S.busy=true;S.held=true;S.hide=3;say('You freeze and hide… (3)');render();
  const f=$('hbf');f.style.transition='none';f.style.width='0%';void f.offsetWidth;f.style.transition='width '+(HT*3)+'ms linear';f.style.width='100%';
@@ -325,15 +369,17 @@ function hide(){
 }
 function place(x,y){
  if(S.over||S.busy||S.noise<1||(x==S.px&&y==S.py))return;
- S.noise--;S.nz={x,y,t:5};sfx(noiseSfx);say('Noisemaker deployed. Listen.');turn();
+ if(S.safe[x+','+y]){say('A Safe Room is no place for a noisemaker.');return}
+ S.noise--;S.nz={x,y,t:5,al:null};sfx(noiseSfx);say('Noisemaker deployed. Listen.');turn();
 }
 function blast(x,y){
  if(S.over||S.busy||!S.flame||(x==S.px&&y==S.py))return;
  if(D(x,y,S.px,S.py)>2){say('Out of range (2 tiles).');return}
  if(S.fch<1){say('Flamethrower empty. Wait for it to recharge.');return}
- const k=x+','+y;S.fch--;S.frest=0;S.fire[k]=3;delete S.webs[k];vib(80);sfx(flameSfx);
+ const k=x+','+y;S.fch--;S.frest=0;S.fire[k]=4;delete S.webs[k];vib(80);sfx(flameSfx);
+ const hit=S.al.filter(q=>q.x==x&&q.y==y);hit.forEach(q=>{q.chase=false;q.flee=4});
  const ei=S.eggs.findIndex(e=>e.x==x&&e.y==y);
- if(ei>=0){S.eggs.splice(ei,1);say('Egg destroyed! '+(3-S.eggs.length)+'/3'+(S.eggs.length?'':' Get to the elevator ↑'))}else say('Flames roar 🔥');
+ if(ei>=0){S.eggs.splice(ei,1);say('Egg destroyed! '+(3-S.eggs.length)+'/3'+(S.eggs.length?'':' Get to the elevator ↑'))}else say(hit.length?'The Alien recoils from the flames! 🔥':'Flames roar 🔥');
  turn();
 }
 function die(m){S.over=true;look();render();beatStop();end(false,m)}
