@@ -17,7 +17,8 @@ h2{font-size:20px;letter-spacing:.12em;margin:0;text-shadow:0 0 8px var(--ph)}
 #msg{font-size:16px;line-height:1.25;height:2.5em;overflow:hidden;text-align:center;color:#8fd9a8;max-width:360px;flex:none}
 #vp{position:relative;overflow:hidden;border:1px solid var(--dim);box-shadow:0 0 24px #0f3 inset;touch-action:none;flex:none}
 #grid{display:grid;gap:4px;padding:6px;width:max-content;transition:transform .25s ease-out;will-change:transform}
-#arrow,#arrow2{position:absolute;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;pointer-events:none;display:none;z-index:5;filter:drop-shadow(0 0 6px #5cf);animation:ap 1s ease-in-out infinite alternate}@keyframes ap{to{opacity:.55}}
+#arrow,#arrow2,#arrow3{position:absolute;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;pointer-events:none;display:none;z-index:5;filter:drop-shadow(0 0 6px #5cf);animation:ap 1s ease-in-out infinite alternate}@keyframes ap{to{opacity:.55}}
+#arrow3{color:#ff4d4d;filter:drop-shadow(0 0 6px currentColor)}
 #arrow2{color:#ffd400;filter:drop-shadow(0 0 6px currentColor)}
 .t{width:var(--ts);height:var(--ts);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:bold;border:1px solid #0b1a10;background:#000;position:relative;color:transparent;transition:background .2s}
 .t.seen{background:#06140b;border-color:var(--dim);color:#2d7a47;opacity:.55}
@@ -81,7 +82,7 @@ h2{font-size:20px;letter-spacing:.12em;margin:0;text-shadow:0 0 8px var(--ph)}
 <div id="tip"></div>
 <div id="msg"></div>
 <div id="o2"><span id="o2l">O₂</span><div class="bar"><i id="o2f"></i></div><b id="o2t">60s</b></div>
-<div id="vp"><div id="grid"></div><svg id="arrow" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="#5cf" stroke="#bff" stroke-width="1.5" stroke-linejoin="round"/></svg><svg id="arrow2" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="currentColor" stroke="#ffffffaa" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+<div id="vp"><div id="grid"></div><svg id="arrow" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="#5cf" stroke="#bff" stroke-width="1.5" stroke-linejoin="round"/></svg><svg id="arrow3" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="currentColor" stroke="#ffffffaa" stroke-width="1.5" stroke-linejoin="round"/></svg><svg id="arrow2" viewBox="0 0 34 34"><path d="M4 12h14V5l13 12-13 12v-7H4z" fill="currentColor" stroke="#ffffffaa" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
 <div id="hud"><div>HIDE <b id="stam" class="hs"></b><div id="hb"><i id="hbf"></i></div></div><div id="scrap"></div><div style="display:flex;gap:8px"><div id="slot" class="empty">📡<b id="nc">0</b></div><div id="slot2" class="empty" style="display:none">🧨<b id="fc">0</b></div></div></div>
 <div id="key"><span><i style="background:#7fe"></i>Wall</span><span><i style="background:#ffb02e"></i>Door</span><span><b style="color:#5cf">➤</b>Exit</span><span><b id="kb" style="color:#fd0">➤</b>Objective</span></div>
 </div>
@@ -106,7 +107,7 @@ const LV=[
  {n:'Sabotage!',d:'MEDIUM-HARD',m:'eggs',sr:5,tip:'🧨 The flamethrower can ward off the Alien if placed on the same tile for 4 turns.',W:13,H:17,o2:0,sc:4,v:6,dr:16,wb:8,hunt:11,exit:'🛗',brief:'Find the flamethrower 🧨, then drag it onto a nearby tile to burn all 3 alien eggs 🥚.',win:'The nest burns. The elevator is yours.'},
  {n:'Scorched Earth',d:'HARD',m:'reactor',sr:5,tip:'🧨 The flamethrower can ward off the Alien if placed on the same tile for 4 turns.',W:13,H:19,o2:0,ox:1,al:3,sc:4,v:8,dr:18,wb:8,hunt:12,exit:'🚀',slow:1,brief:'Reach the reactor ☢️ and hold your tile to arm it. Then reach the ship 🚀 before the reactor goes critical.',win:'The ship lifts off as the derelict goes up in flames.'}
 ];
-const grid=$('grid'),vp=$('vp'),arrow=$('arrow'),arrow2=$('arrow2');let TS=64,VR=7;
+const grid=$('grid'),vp=$('vp'),arrow=$('arrow'),arrow2=$('arrow2'),arrow3=$('arrow3');let TS=64,VR=7;
 function layout(){
  const maxW=Math.min(innerWidth-24,360);
  const kids=[...$('app').children].filter(e=>e!==vp&&e.offsetParent!==null);
@@ -137,9 +138,10 @@ function camera(){
   const dx=ex-iw/2,dy=ey-ih/2,k=Math.min((iw/2-22)/(Math.abs(dx)||1e-6),(ih/2-22)/(Math.abs(dy)||1e-6));
   return{x:iw/2+dx*k,y:ih/2+dy*k,r:Math.atan2(dy,dx)}};
  const tg=target(),A=pos(EX,EY),B=tg?pos(tg[0],tg[1]):null;
+ const chd=S.over?null:S.al.filter(q=>q.chase).sort((p,q)=>D(p.x,p.y,S.px,S.py)-D(q.x,q.y,S.px,S.py))[0],C=chd?pos(chd.x,chd.y):null;
  if(tg)arrow2.style.color=tg[2];
  if(A&&B&&Math.hypot(A.x-B.x,A.y-B.y)<36){const ox=-Math.sin(A.r)*18,oy=Math.cos(A.r)*18;A.x-=ox;A.y-=oy;B.x+=ox;B.y+=oy}
- [[arrow,A],[arrow2,B]].forEach(([el,q])=>{if(!q){el.style.display='none';return}
+ [[arrow,A],[arrow2,B],[arrow3,C]].forEach(([el,q])=>{if(!q){el.style.display='none';return}
   el.style.display='block';el.style.left=Math.min(iw-17,Math.max(17,q.x))+'px';el.style.top=Math.min(ih-17,Math.max(17,q.y))+'px';el.style.transform='rotate('+q.r+'rad)'})
 }
 addEventListener('resize',layout);
@@ -234,11 +236,11 @@ function render(){
  const ex=canExit();
  T.forEach((t,i)=>{
   const x=i%W,y=(i/W|0),m=S.mem[y][x],k=x+','+y,isE=x==EX&&y==EY,isP=x==S.px&&y==S.py;
-  let c='t'+(m?(m.lit?' lit':' seen'):'')+(isP?' me':'')+(isE?' exit':'')+(m&&m.lit&&m.al?' al':'');
+  let c='t'+(m?(m.lit?' lit':' seen'):'')+(isP?' me':'')+(isE?' exit':'')+((m&&m.lit&&m.al)||(!S.over&&S.al.some(q=>q.chase&&q.x==x&&q.y==y))?' al':'');
   if(m&&m.n)c+=' n'+m.n;
   t.className=c;
   let h='',big=0;
-  if(m&&m.lit&&m.al)h='👾';
+  if((m&&m.lit&&m.al)||(!S.over&&S.al.some(q=>q.chase&&q.x==x&&q.y==y)))h='👾';
   else if(isE){h=EXI;big=1}
   else if(S.over&&!S.suff&&S.al.some(q=>q.x==x&&q.y==y))h='👽';
   else if(isP)h=S.hide>0?'<span style="opacity:.5">👨‍🚀</span>':'👨‍🚀';
@@ -314,7 +316,7 @@ function turn(){S.started=true;
  if(S.fr&&S.fr.freed&&S.al.some(q=>q.x==S.fr.x&&q.y==S.fr.y))return die('The Alien took your friend. Mission failed.');
  const was=S.al.some(q=>q.chase);
  S.al.forEach(q=>{if(!q.chase&&!q.flee&&sees(q))q.chase=true});
- if(!was&&S.al.some(q=>q.chase)){say('👁️ It has spotted you! Run!');vib([120,60,120])}
+ if(!was&&S.al.some(q=>q.chase)){say('👁️ It has spotted you! Run!');vib([120,60,120]);sfx(caught)}
  look();render();beat();near();
 }
 function xturn(m){say(m);turn()}
@@ -425,7 +427,7 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(.25,(now-lastT)/1000);l
  S.o2-=dt;
  if(S.o2<=0){S.o2=0;o2ui();S.suff=true;return die('The reactor went critical.')}
  o2ui()},100);
-function near(){const adj=S.al.some(q=>D(q.x,q.y,S.px,S.py)==1&&S.e[ek(q.x,q.y,S.px,S.py)]!='w');if(adj&&!S.near&&!muted){try{caught.currentTime=0;caught.play().catch(()=>{})}catch(e){}}S.near=adj}
+function near(){const adj=S.al.some(q=>D(q.x,q.y,S.px,S.py)==1&&S.e[ek(q.x,q.y,S.px,S.py)]!='w');if(adj&&!S.near&&!muted&&caught.paused){try{caught.currentTime=0;caught.play().catch(()=>{})}catch(e){}}S.near=adj}
 let inMenu=true;
 function bgmPlay(){if(!inMenu&&!muted&&bgm.paused&&!(S&&S.over)){try{bgm.play().catch(()=>{})}catch(e){}}}
 $('mute').onclick=()=>{muted=!muted;$('mute').textContent=muted?'🔇':'🔊';if(muted){bgm.pause();caught.pause();deathSfx.pause();scrapSfx.pause();SFX.forEach(a=>a.pause());breathe.pause()}else{ensureAudio()}};
