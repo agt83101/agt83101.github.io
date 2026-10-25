@@ -213,8 +213,10 @@ function gen(){
  GSAFE=[];
  const dead=(x,y)=>nb(x,y).filter(([p,q])=>e[ek(x,y,p,q)]!='w').length==1&&!(x==SX&&y==SY)&&!(x==EX&&y==EY);
  const cand=op.filter(([a,b,c,d])=>dead(a,b)||dead(c,d)).sort(()=>Math.random()-.5);
- for(const[a,b,c,d]of cand){if(GSAFE.length>=LV[LVL].sr)break;const P=pt(a,b,c,d);if(P.some(q=>jn.has(q)))continue;
-  P.forEach(q=>jn.add(q));e[ek(a,b,c,d)]='d';GSAFE.push(dead(a,b)?a+','+b:c+','+d)}
+ for(const gap of[6,5,4,3,2,0]){
+  for(const[a,b,c,d]of cand){if(GSAFE.length>=LV[LVL].sr)break;if(e[ek(a,b,c,d)]=='d')continue;const P=pt(a,b,c,d);if(P.some(q=>jn.has(q)))continue;
+   const t=dead(a,b)?[a,b]:[c,d];if(GSAFE.some(k=>{const[u,v]=k.split(',').map(Number);return Math.abs(u-t[0])+Math.abs(v-t[1])<gap}))continue;
+   P.forEach(q=>jn.add(q));e[ek(a,b,c,d)]='d';GSAFE.push(t[0]+','+t[1])}}
  let placed=0;
  while(placed<LV[LVL].dr&&op.length){const[a,b,c,d]=op.splice(R(op.length),1)[0];
   if(e[ek(a,b,c,d)])continue;const P=pt(a,b,c,d);if(P.some(q=>jn.has(q)))continue;
@@ -236,15 +238,15 @@ function init(){
  const used=new Set([SX+','+SY,EX+','+EY,...GSAFE,...DEAD]);S.al=[];
  const free=()=>{const r=[];for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++)if(!used.has(xx+','+yy))r.push([xx,yy]);return r};
  for(let i=0;i<(c.al||1);i++){let x,y,n=0;do{x=R(W);y=R(H);n++}while((f0[y][x]<9||used.has(x+','+y)||S.al.some(q=>D(x,y,q.x,q.y)<5))&&n<800);if(used.has(x+','+y)){const fr=free();[x,y]=fr[R(fr.length)]}used.add(x+','+y);S.al.push({x,y,chase:false,flee:0})}
- const pick=(m=0,e=0,sep=[],sd=0)=>{let x,y,n=0;do{x=R(W);y=R(H);n++}while((used.has(x+','+y)||f0[y][x]<m||D(x,y,EX,EY)<e||sep.some(p=>D(x,y,p.x,p.y)<sd))&&n<800);if(used.has(x+','+y)){const fr=free();[x,y]=fr[R(fr.length)]}used.add(x+','+y);return{x,y}};
+ const pick=(m=0,e=0,sep=[],sd=0,strict=0)=>{let x,y,n=0;do{x=R(W);y=R(H);n++}while((used.has(x+','+y)||f0[y][x]<m||D(x,y,EX,EY)<e||sep.some(p=>D(x,y,p.x,p.y)<sd))&&n<800);if(strict&&(used.has(x+','+y)||f0[y][x]<m||D(x,y,EX,EY)<e||sep.some(p=>D(x,y,p.x,p.y)<sd)))return null;if(used.has(x+','+y)){const fr=free();[x,y]=fr[R(fr.length)]}used.add(x+','+y);return{x,y}};
  const put=(t,p)=>{S.items[p.x+','+p.y]=t};
  for(let i=0;i<c.sc;i++)put('scrap',pick());
  for(let i=0;i<c.o2;i++)put('o2',pick());
  for(let i=0;i<c.v;i++){const p=pick();S.vents.push([p.x,p.y])}
  for(let i=0;i<c.wb;i++){const p=pick(2);S.webs[p.x+','+p.y]=1}
  if(c.m=='disc'){const d=pick(8,4);S.dx=d.x;S.dy=d.y;put('data',d);put('card',pick(10))}
- if(c.m=='power'){for(let i=0;i<3;i++)put('cell',pick(3));for(let i=0;i<3;i++){const p=pick(6,3,S.fuses,6);S.fuses.push({x:p.x,y:p.y,d:false})}}
- if(c.m=='friend'){const p=pick(10,5);S.fr={x:p.x,y:p.y,freed:false};put('axe',pick(6))}
+ if(c.m=='power'){for(let i=0;i<3;i++){const p=pick(6,3,S.fuses,6);S.fuses.push({x:p.x,y:p.y,d:false})}const cs=[];for(let i=0;i<3;i++){let p=null;for(const g of[6,5,4,3,2,0]){p=pick(3,0,[...S.fuses,...cs],g,1);if(p)break}p=p||pick(3);cs.push(p);put('cell',p)}}
+ if(c.m=='friend'){const p=pick(10,5);S.fr={x:p.x,y:p.y,freed:false};{let p=null;for(const g of[9,8,6,4,0]){p=pick(6,0,[S.fr],g,1);if(p)break}put('axe',p||pick(6))}}
  if(c.m=='eggs'){for(let i=0;i<3;i++){const p=pick(8,3,S.eggs,5);S.eggs.push({x:p.x,y:p.y})}const p=pick(5);S.fx=p.x;S.fy=p.y;put('flame',p)}
  if(rx){const p=pick(12,6);S.rx=p.x;S.ry=p.y}
  $('over').style.display='none';$('fx').style.display='none';$('hbf').style.transition='none';$('hbf').style.width='0%';vp.classList.remove('alarm','dark');breathe.pause();alarmSfx.pause();
@@ -314,7 +316,7 @@ function moveAlien(al,nx){
  const vi=al.chase?-1:a.vents.findIndex(v=>v[0]==al.x&&v[1]==al.y);
  if(vi>=0){const o=a.vents[vi^1];al.x=o[0];al.y=o[1];say('Something scrabbles through the vents…')}
 }
-function openNs(al){const a=S,ns=nb(al.x,al.y).filter(([x,y])=>a.e[ek(al.x,al.y,x,y)]!='w'&&ek(al.x,al.y,x,y)!==a.lockEdge&&!a.fire[x+','+y]);
+function openNs(al){const a=S,ns=nb(al.x,al.y).filter(([x,y])=>a.e[ek(al.x,al.y,x,y)]!='w'&&ek(al.x,al.y,x,y)!==a.lockEdge&&!a.fire[x+','+y]&&!(a.hide>0&&a.fr&&a.fr.freed&&a.fr.x==x&&a.fr.y==y));
  const fr=ns.filter(([x,y])=>!a.al.some(q=>q!=al&&q.x==x&&q.y==y));return fr.length?fr:ns}
 function flee(al,ns){if(!ns.length)return;const fp=bfs(S.px,S.py);ns.sort((p,q)=>fp[q[1]][q[0]]-fp[p[1]][p[0]]||Math.random()-.5);moveAlien(al,ns[0])}
 /* states: patrol/stalk (can be lured by a noisemaker, you can hide) -> chase (it has seen you: no hiding, noise ignored) -> retreat (flame / Safe Room) */
@@ -324,7 +326,7 @@ function alienStep(al){
  if(a.nz&&a.nz.al===al)return;
  if(al.flee>0){al.flee--;flee(al,ns);return}
  let tgt=null;
- if(a.fr&&a.fr.freed&&F[a.fr.y][a.fr.x]<=cfg.hunt)tgt=[a.fr.x,a.fr.y];
+ if(a.fr&&a.fr.freed&&a.hide<=0&&F[a.fr.y][a.fr.x]<=cfg.hunt)tgt=[a.fr.x,a.fr.y];
  else if(al.chase||(!a.held&&(a.loud||a.armed||F[a.py][a.px]<=cfg.hunt)))tgt=[a.px,a.py];
  if(a.hide>0&&!tgt){flee(al,ns);return}
  if(!ns.length)return;
@@ -410,7 +412,7 @@ function hide(){
  if(S.over||S.busy)return;ensureAudio();
  if(S.al.some(q=>q.chase)){say('It has spotted you. You can’t hide!');vib(60);return}
  if(S.hcd>0){say('Hide is recharging…');vib(30);return}
- S.busy=true;S.held=true;S.hide=5;say('You freeze and hide… (5)');render();
+ S.busy=true;S.held=true;S.hide=5;say(S.fr&&S.fr.freed?'You and your friend freeze and hide… (5)':'You freeze and hide… (5)');render();
  const f=$('hbf');f.style.transition='none';f.style.width='0%';void f.offsetWidth;f.style.transition='width '+(HT*5)+'ms linear';f.style.width='100%';
  let i=0;(function st(){setTimeout(()=>{if(S.over)return;turn();if(S.over)return;S.hide--;
   if(++i<5){say('Hiding… ('+S.hide+')');st()}
@@ -436,7 +438,7 @@ function blast(x,y){
 function die(m){S.over=true;look();render();beatStop();end(false,m)}
 let won=false;
 function end(win,m){breathe.pause();alarmSfx.pause();beatStop();won=win;
- if(win){bgm.pause();caught.pause();if(LVL==4){spaceSfx.onended=()=>{spaceSfx.onended=null;sfx(missionSfx)};sfx(spaceSfx)}else sfx(missionSfx);if(LVL+1<LV.length&&PROG<LVL+2){PROG=LVL+2;try{localStorage.setItem('pa_prog',PROG)}catch(e){}}
+ if(win){bgm.pause();caught.pause();if(LVL==4)sfx(spaceSfx);else sfx(missionSfx);if(LVL+1<LV.length&&PROG<LVL+2){PROG=LVL+2;try{localStorage.setItem('pa_prog',PROG)}catch(e){}}
   show(LVL+1<LV.length?'MISSION COMPLETE':'ALL MISSIONS COMPLETE',LV[LVL].win+' ('+S.moves+' turns)',LVL+1<LV.length?'NEXT LEVEL':'REPLAY');return}
  bgm.pause();caught.pause();if(!S.suff)sfx(deathSfx);vib([400,100,400]);staticFx(1300,()=>{if(!inMenu)show('SIGNAL LOST',m||'','RETRY','💀')});
 }
