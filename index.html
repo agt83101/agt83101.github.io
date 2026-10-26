@@ -103,7 +103,14 @@ h2{font-size:20px;letter-spacing:.12em;margin:0;text-shadow:0 0 8px var(--ph)}
 .w{position:absolute;inset:0;pointer-events:none}
 .t.void.vsp{pointer-events:auto}
 .marr{position:absolute;width:0;height:0;border-left:10px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;filter:drop-shadow(0 0 3px #fff);pointer-events:none}
-.t.void{border:0;color:#cfe;pointer-events:none;background-color:transparent;background-repeat:no-repeat;opacity:1;animation:twk 5s ease-in-out infinite alternate}@keyframes twk{to{filter:brightness(.55)}}
+.t.void{border:0;color:#cfe;pointer-events:none;background-color:transparent;isolation:isolate}
+.t.void::before,.t.void::after{content:'';position:absolute;inset:0;z-index:-1;background-repeat:repeat;transition:background-position .25s ease-out}
+.t.void::before{background-image:var(--sa);background-size:150px 150px,200px 200px;background-position:var(--bp1);animation:twk 3.1s ease-in-out infinite}
+.t.void::after{background-image:var(--sb);background-size:260px 260px;background-position:var(--bp2);animation:twk 1.9s ease-in-out infinite -0.8s}
+.t.void:nth-child(3n+1)::before{animation-duration:4.2s;animation-delay:-1.3s}
+.t.void:nth-child(5n+2)::after{animation-duration:2.6s;animation-delay:-1.7s}
+.t.void:nth-child(7n+3)::before{animation-duration:2.4s;animation-delay:-0.4s}
+@keyframes twk{0%,100%{opacity:1}50%{opacity:.15}}
 .pulse{animation:pl .3s}@keyframes pl{50%{box-shadow:0 0 30px var(--red) inset}}
 </style></head><body>
 <div id="app">
@@ -128,7 +135,7 @@ h2{font-size:20px;letter-spacing:.12em;margin:0;text-shadow:0 0 8px var(--ph)}
   <rect x="39" y="46" width="1" height="1" fill="#4dff88"/>
   <rect x="20" y="55" width="1" height="1" fill="#4dff88"/>
   <rect x="43" y="55" width="1" height="1" fill="#4dff88"/></svg></div><h1 class="mt">PROXIMITY<br><span style="font-size:64px">ALERT:</span></h1><p class="tag">Derelict Shift</p><button id="play">PLAY</button><button id="inst">INSTRUCTIONS</button>
-<div id="imod"><div class="box"><div id="how"><p>Complete each mission objective, then escape the derelict.</p><ul><li>Tap an adjacent tile to move.</li><li>Tap your own tile to Hide for 5 turns and the Alien loses you.</li><li>Drag the 📡 noisemaker onto a tile to lure the Alien.</li><li>Drag the 🧨 flare onto a tile to light up a 3×3 area for 5 turns.</li><li>Numbers = proximity to alien.</li><li>Doors require 2 moves to pry open.</li><li>Once the Alien spots you, you can’t hide and noisemakers won’t work.</li></ul></div><button id="iclose">CLOSE</button></div></div></div>
+<div id="imod"><div class="box"><div id="how"><p>Complete each mission objective, then escape the derelict.</p><ul><li>Tap an adjacent tile to move.</li><li>Tap your own tile to Hide for 5 turns and the Alien loses you.</li><li>Levels 1–3: drag the 📡 noisemaker onto a tile to lure the Alien.</li><li>Drag the 🧨 flare onto a tile to light up a 3×3 area for 5 turns.</li><li>Numbers = proximity to alien.</li><li>Doors require 2 moves to pry open.</li><li>Once the Alien spots you, you can’t hide and noisemakers won’t work.</li></ul></div><button id="iclose">CLOSE</button></div></div></div>
 <div id="lvls"><div class="crt-screen"><div class="crt-chromatic"></div><div class="crt-static"></div></div><h1 class="mt" style="font-size:26px">SELECT MISSION</h1><div id="lvlist"></div><button id="back" class="sec">BACK</button></div>
 <div id="ghost">📡</div><canvas id="fx"></canvas>
 <div id="over"><div id="oi"></div><h2 id="ot"></h2><div id="os"></div><div id="card"></div><button id="again">RETRY</button><button id="tolv">LEVEL SELECT</button></div>
@@ -176,6 +183,8 @@ function camera(){
  const cx=PAD+S.px*st+TS/2,cy=PAD+S.py*st+TS/2;
  const TX=Math.min(0,Math.max(iw-gw,iw/2-cx)),TY=Math.min(0,Math.max(ih-gh,ih/2-cy));
  grid.style.transform='translate('+TX+'px,'+TY+'px)';
+ T.forEach((t,i)=>{if(!t.classList.contains('void'))return;const x=i%W,y=(i/W|0);
+  const bp=STAR_K.map(k=>(-(1-k)*TX-PAD-x*st).toFixed(1)+'px '+(-(1-k)*TY-PAD-y*st).toFixed(1)+'px');t.style.setProperty('--bp1',bp.slice(0,2).join(','));t.style.setProperty('--bp2',bp[2]);});
  const pos=(gx,gy)=>{const ex=TX+PAD+gx*st+TS/2,ey=TY+PAD+gy*st+TS/2,h=TS/2;
   if(ex>h&&ex<iw-h&&ey>h&&ey<ih-h)return null;
   const dx=ex-iw/2,dy=ey-ih/2,k=Math.min((iw/2-22)/(Math.abs(dx)||1e-6),(ih/2-22)/(Math.abs(dy)||1e-6));
@@ -202,9 +211,15 @@ function attached(e,a,b,c,d){
 /* Dead zones: tiles that are empty space. Carved as ragged blobs (mostly off the edges, some inside) and only kept if every remaining tile stays connected to the start. */
 function liveConn(){const seen=new Set([SX+','+SY]),q=[[SX,SY]];for(let i=0;i<q.length;i++){const[x,y]=q[i];for(const[a,b]of nb(x,y)){if(seen.has(a+','+b))continue;seen.add(a+','+b);q.push([a,b])}}return seen.size==W*H-DEAD.size}
 let STAR=0;
-function starBg(i){let h=(STAR*7919+i*104729)>>>0;const r=()=>{h=(h*1664525+1013904223)>>>0;return h/4294967296},g=[],n=3+(r()*5|0);
- for(let j=0;j<n;j++){const sz=r()<.8?1.5:2.5,c=r()<.6?'#4dff88':r()<.5?'#bfffd6':'#2d9a5a',a=(.35+r()*.65).toFixed(2);g.push('radial-gradient(circle at '+(r()*100).toFixed(0)+'% '+(r()*100).toFixed(0)+'%,'+c+' '+sz+'px,transparent '+(sz+.6)+'px)')}
- return g.join(',')}
+/* Parallax starfield: three repeating star tiles (far, mid, near). Void tiles show them at different fractions of the camera movement. */
+const STAR_K=[.18,.45,.8],STAR_SZ=[150,200,260];
+function setStars(){
+ let h=(STAR*7919+13)>>>0;const r=()=>{h=(h*1664525+1013904223)>>>0;return h/4294967296};
+ const cfg=[[22,'#2d9a5a',1,.7],[14,'#4dff88',1.5,.9],[7,'#bfffd6',2.4,1]];
+ const imgs=cfg.map(([n,col,rad,op],g)=>{const sz=STAR_SZ[g];let c='';
+  for(let i=0;i<n;i++){const cc=r()<.2?'#bfffd6':col;c+="<circle cx='"+(r()*sz).toFixed(1)+"' cy='"+(r()*sz).toFixed(1)+"' r='"+(rad*(.7+r()*.6)).toFixed(2)+"' fill='"+cc+"' fill-opacity='"+(op*(.55+r()*.45)).toFixed(2)+"'/>"}
+  return 'url("data:image/svg+xml,'+encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='"+sz+"' height='"+sz+"'>"+c+"</svg>")+'")'});
+ grid.style.setProperty('--sa',imgs[0]+','+imgs[1]);grid.style.setProperty('--sb',imgs[2])}
 function compMap(){const m=Array.from({length:H},()=>Array(W).fill(-1)),sizes=[];let id=0;
  const run=(sx,sy)=>{if(DEAD.has(sx+','+sy)||m[sy][sx]>=0)return;const q=[[sx,sy]];m[sy][sx]=id;let n=0;for(let i=0;i<q.length;i++){n++;const[x,y]=q[i];for(const[a,b]of nb(x,y))if(m[b][a]<0){m[b][a]=id;q.push([a,b])}}sizes.push(n);id++};
  run(SX,SY);for(let y=0;y<H;y++)for(let x=0;x<W;x++)run(x,y);return{m,sizes}}
@@ -217,7 +232,7 @@ function genDeadAir(){
   for(let y=Math.max(0,cy-3);y<=Math.min(H-1,cy+3);y++)for(let x=Math.max(0,cx-3);x<=Math.min(W-1,cx+3);x++){const k=x+','+y;if(DEAD.has(k)||keep.has(k))continue;if(((x-cx)/rw)**2+((y-cy)/rh)**2<=1+(Math.random()-.5)*.7)add.push(k)}
   if(!add.length)continue;add.forEach(k=>DEAD.add(k));if(!ok())add.forEach(k=>DEAD.delete(k))}
 }
-function genDead(){STAR++;
+function genDead(){STAR++;setStars();
  if(LV[LVL].m=='air')return genDeadAir();
  DEAD=new Set();const tgt=Math.round(W*H*(LV[LVL].dz||0)),keep=new Set([SX+','+SY,SX+','+(SY-1),EX+','+EY,EX+','+(EY+1)]);
  for(let t=0;t<500&&DEAD.size<tgt;t++){
@@ -396,8 +411,7 @@ function render(){
  const ex=canExit();
  T.forEach((t,i)=>{
   const x=i%W,y=(i/W|0),m=S.mem[y][x],k=x+','+y,isE=x==EX&&y==EY,isP=x==S.px&&y==S.py;
-  if(DEAD.has(k)){t.className='t void'+(LV[LVL].m=='air'?' vsp':'')+(isP?' me':'');t.innerHTML=isP?'👨‍🚀':((S.over||DEAD.has(S.px+','+S.py)||D(x,y,S.px,S.py)<=1)&&metAt(x,y)?'🪨'+metArrow(x,y):'');if(t.dataset.star!==STAR+'.'+i){t.dataset.star=STAR+'.'+i;t.style.background=starBg(i);t.style.animationDelay=(i*0.7%5).toFixed(1)+'s'}return}
-  if(t.dataset.star){delete t.dataset.star;t.style.background='';t.style.animationDelay=''}
+  if(DEAD.has(k)){t.className='t void'+(LV[LVL].m=='air'?' vsp':'')+(isP?' me':'');t.innerHTML=isP?'👨‍🚀':((S.over||DEAD.has(S.px+','+S.py)||D(x,y,S.px,S.py)<=1)&&metAt(x,y)?'🪨'+metArrow(x,y):'');return}
   let c='t'+(m?(m.lit?' lit':' seen'):'')+(isP?' me':'')+(isE?' exit':'')+((m&&m.lit&&m.al)||(!S.over&&S.al.some(q=>q.chase&&q.x==x&&q.y==y))?' al':'');
   if(m&&m.n)c+=' n'+m.n;
   if(S.flA.some(f=>x>=f.x-1&&x<=f.x+1&&y>=f.y-1&&y<=f.y+1))c+=' flare';
