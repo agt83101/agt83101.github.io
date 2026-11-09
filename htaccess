@@ -1,0 +1,37 @@
+# Derelict Shift – Hostinger (Apache / LiteSpeed)
+
+# MIME types
+AddType application/manifest+json .webmanifest
+AddType image/x-icon .ico
+AddType font/woff .woff
+AddType font/woff2 .woff2
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # The game page: always revalidate so new versions / daily changes arrive quickly
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType application/manifest+json "access plus 1 day"
+  # Icons rarely change
+  ExpiresByType image/png "access plus 7 days"
+  ExpiresByType image/x-icon "access plus 7 days"
+</IfModule>
+
+<IfModule mod_headers.c>
+  # HTML: browser may keep a copy but must check with the server each load (cheap 304 if unchanged)
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "^$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.webmanifest$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
+  <FilesMatch "\.(png|ico)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+DirectoryIndex index.html
